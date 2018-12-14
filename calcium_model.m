@@ -47,10 +47,10 @@ kna = 9.4; % [mM] Na activation constant for MCU
 N = 10; % [mM] Na in cytosol
 
 %% Leak Parameters
-leak_e_u = 0*0.02; % [1/s] leak constant from ER to microdomain
+leak_e_u = 0.02; % [1/s] leak constant from ER to microdomain
 leak_e_c = 0.02; % [1/s] leak constant from ER to microdomain
-leak_u_c = 0*0.02; % [1/s] leak constant from ER to microdomain
-leak_u_m = 0*0.02; % [1/s] leak constant from ER to microdomain
+leak_u_c = 0.02; % [1/s] leak constant from ER to microdomain
+leak_u_m = 0.02; % [1/s] leak constant from ER to microdomain
 
 %% Microdomain Parameters
 % cI = 0.8; % fraction of IP3R facing microdomain
