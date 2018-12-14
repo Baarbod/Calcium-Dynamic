@@ -1,6 +1,5 @@
 classdef CalciumGUI < handle
     properties
-        Position          % position of main figure
         Figure            % figure handle
         SliderPanel       % panel handle that contains ui elements
         ResetButton       % reset button handle
@@ -20,9 +19,12 @@ classdef CalciumGUI < handle
             obj.SliderCount = 0;
             obj.Figure = figure('Visible','on','Name',obj.Name);
             movegui(obj.Figure,'center');
+        end
+        
+        function obj = createpanel(obj)
             obj.SliderPanel.Controls = uipanel('Title','Parameter Control',...
                 'FontSize',10,'FontWeight','bold','Position',[.70 0 0.5 1]);
-        end
+        end 
         
         function obj = addresetbutton(obj)
             obj.ResetButton = ...
@@ -63,34 +65,42 @@ classdef CalciumGUI < handle
         end
         
         % add a slider
-        function obj = addslider(obj,sName,sMin,sMax,sVal)
+        function obj = defineslider(obj,sName,sMin,sMax,sInitVal)
             obj.SliderCount = obj.SliderCount + 1;
-            width = 0.27;
-            height = 1/13;
             obj.SliderHandle.s(obj.SliderCount,1) = ...
                 uicontrol('Parent',obj.SliderPanel.Controls,...
                 'Style','slider',...
                 'String',sName,...
-                'Min',sMin,'Max',sMax,'Value',sVal,...
+                'Min',sMin,'Max',sMax,'Value',sInitVal,...
                 'SliderStep',[0.01 0.1],...
                 'Units','normalized',...
-                'Position',[0.3 1-height*obj.SliderCount width height],...
                 'Callback',@obj.updateaxes);
             obj.SliderHandle.t(obj.SliderCount,1) = ...
                 uicontrol('Parent',obj.SliderPanel.Controls,...
                 'Style','text',...
-                'Units','normalized',...
-                'Position',[0 (1-height*0.3)-height*obj.SliderCount 0.3 height]);
+                'Units','normalized');
             
             obj.SliderValueList(obj.SliderCount,1) = ...
                 obj.SliderHandle.s(obj.SliderCount).Value;
-            
-            align(obj.SliderHandle.t(:,1),'Center','Fixed')
+          
             updatetext(obj);
         end
         
+        function obj = setsliderposition(obj)
+            width = 0.27;
+            height = 1/obj.SliderCount;
+            for i = 1:obj.SliderCount
+                obj.SliderHandle.s(i,1).Position = ...
+                    [0.3 1-height*i width height];
+                obj.SliderHandle.t(i,1).Position = ...
+                    [0 (1-height*0.3)-height*i 0.3 height];
+            end
+        end
+       
+
+        
         function obj = updatetext(obj)
-            for i = 1:length(obj.SliderHandle.t)
+            for i = 1:obj.SliderCount
                 name = obj.SliderHandle.s(i).String;
                 val = obj.SliderHandle.s(i).Value;
                 obj.SliderHandle.t(i).String = [name ': ' num2str(val)];
@@ -164,7 +174,6 @@ classdef CalciumGUI < handle
 %                 ax.YLim = [0 yAxMax(iax)];
 %                 ax.YTick = 0:yTick(iax):yAxMax(iax);
             end
-            
             linkaxes(obj.Axis.h, 'x');
         end
     end
