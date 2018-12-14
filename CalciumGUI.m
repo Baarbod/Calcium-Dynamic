@@ -1,70 +1,73 @@
 classdef CalciumGUI < handle
     properties
         Figure            % figure handle
+        PlotCount         % Number of plots
+        Name              % name of gui figure
         SliderPanel       % panel handle that contains ui elements
         ResetButton       % reset button handle
         Axis              % axis handles
         SliderCount       % number of sliders
         SliderHandle      % slider handles
-        SliderValueList   % array of current slider values
+        Parameters        % array of current slider values
         InitialParam      % intial slider values
         State             % array of current state variables
-        Name              % name of gui figure
     end
     
     methods
         
+        % Constructor
         function obj = CalciumGUI(Name)
             obj.Name = Name;
             obj.SliderCount = 0;
+            obj.PlotCount = 4;
             obj.Figure = figure('Visible','on','Name',obj.Name);
             movegui(obj.Figure,'center');
         end
         
+        % Panel that will contain parameter sliders
         function obj = createpanel(obj)
             obj.SliderPanel.Controls = uipanel('Title','Parameter Control',...
-                'FontSize',10,'FontWeight','bold','Position',[.70 0 0.5 1]);
+                'FontSize',10,'FontWeight','bold','Position',[.80 0.1 0.20 0.9]);
         end 
-        
+       
         function obj = addresetbutton(obj)
             obj.ResetButton = ...
-                uicontrol('Parent',obj.SliderPanel.Controls,...
-                'Style','pushbutton',...
+                uicontrol('Style','pushbutton',...
                 'String','RESET',...
                 'FontSize',10,...
                 'Units','normalized',...
-                'Position',[0 0 0.1 0.1],...
+                'Position',[0.80 0 0.075 0.075],...
                 'Callback',@obj.resetgui);
         end
         
+        % Callback function for reset button
         function obj = resetgui(obj,~,~)
             nVal = length(obj.SliderHandle.s);
-            obj.SliderValueList = zeros(nVal,1);
+            obj.Parameters = zeros(nVal,1);
             for i = 1:nVal
                 obj.SliderHandle.s(i).Value = obj.InitialParam(i);
             end
             updateaxes(obj);
         end
         
-        % intitialize the gui plot
+        % Define the initial parameters based on starting slider values
         function obj = initstate(obj)
-            obj.InitialParam = obj.SliderValueList;
+            obj.InitialParam = obj.Parameters;
             updateaxes(obj);
         end
         
-        % make the initial axis
+        % Create the axes; Position = [left bottom width height]
         function obj = createplot(obj)
-            obj.Axis.h(1) = axes('Units','normalized',...
-                'Position',[0.05,0.525,0.275,0.425]);
-            obj.Axis.h(2) = axes('Units','normalized',...
-                'Position',[0.375,0.525,0.275,0.425]);
-            obj.Axis.h(3) = axes('Units','normalized',...
-                'Position',[0.05,0.05,0.275,0.425]);
-            obj.Axis.h(4) = axes('Units','normalized',...
-                'Position',[0.375,0.05,0.275,0.425]);
+            for iplot = 1:obj.PlotCount
+                plotHeight = 1/obj.PlotCount;
+                
+                obj.Axis.h(iplot) = axes('Units','normalized',...
+                    'Position',...
+                    [0.03,(1-plotHeight)-(iplot-1)*plotHeight,0.2,plotHeight]);
+            end
         end
         
-        % add a slider
+        % Define a slider
         function obj = defineslider(obj,sName,sMin,sMax,sInitVal)
             obj.SliderCount = obj.SliderCount + 1;
             obj.SliderHandle.s(obj.SliderCount,1) = ...
@@ -80,25 +83,25 @@ classdef CalciumGUI < handle
                 'Style','text',...
                 'Units','normalized');
             
-            obj.SliderValueList(obj.SliderCount,1) = ...
+            obj.Parameters(obj.SliderCount,1) = ...
                 obj.SliderHandle.s(obj.SliderCount).Value;
           
             updatetext(obj);
         end
         
+        % Set all current slider positions
         function obj = setsliderposition(obj)
-            width = 0.27;
+            width = 0.6;
             height = 1/obj.SliderCount;
             for i = 1:obj.SliderCount
                 obj.SliderHandle.s(i,1).Position = ...
-                    [0.3 1-height*i width height];
+                    [1-width 1-height*i width height];
                 obj.SliderHandle.t(i,1).Position = ...
                     [0 (1-height*0.3)-height*i 0.3 height];
             end
         end
        
-
-        
+        % Update the text showing current slider values
         function obj = updatetext(obj)
             for i = 1:obj.SliderCount
                 name = obj.SliderHandle.s(i).String;
@@ -108,18 +111,17 @@ classdef CalciumGUI < handle
             end
         end
         
-        % update current slider values
+        % Update parameters to be used as model input
         function obj = updateparameters(obj)
-            nVal = length(obj.SliderHandle.s);
-            obj.SliderValueList = zeros(nVal,1);
-            for i = 1:nVal
-                obj.SliderValueList(i,1) = obj.SliderHandle.s(i).Value;
+            obj.Parameters = zeros(obj.SliderCount,1);
+            for i = 1:obj.SliderCount
+                obj.Parameters(i,1) = obj.SliderHandle.s(i).Value;
             end
         end
         
-        % run model
+        % Run model with current parameters
         function obj = solvemodel(obj)
-            [t,c,e,m,u] = calcium_model(obj.SliderValueList);
+            [t,c,e,m,u] = calcium_model(obj.Parameters);
             obj.State(:,1) = t;
             obj.State(:,2) = c;
             obj.State(:,3) = e;
@@ -127,6 +129,7 @@ classdef CalciumGUI < handle
             obj.State(:,5) = u;
         end
         
+        % Update the plots based on current model state
         function obj = updateaxes(obj,~,~)
             updateparameters(obj);
             solvemodel(obj);
@@ -141,8 +144,7 @@ classdef CalciumGUI < handle
             stateVarList(:,3) = e;
             stateVarList(:,4) = u;
             stateVarName = ["Cytosol","Mitocondria","ER","Microdomain"];
-%             yAxMax = [2 2 350 350];
-%             yTick = [0.25 0.25 50 50];
+            
             for iax = 1:4
                 ax = obj.Axis.h(1,iax);
                 h = plot(t,stateVarList(:,iax),'Parent',ax);
@@ -157,23 +159,8 @@ classdef CalciumGUI < handle
                 ax.Title.FontSize = 12;
                 ax.AmbientLightColor = 'magenta';
                 ax.LineWidth = 1.5;
-                if iax == 3
-                    ax.XAxis.Label.String = 'Time (sec)';
-                end
-                if iax == 1
-                    ax.YAxis.Label.String = '[Ca] \muM';
-%                     ax.XTick = [];
-                end
-%                 if iax == 2
-%                     ax.XTick = [];
-%                     ax.YTick = [];
-%                 end
-%                 if iax == 4
-%                     ax.YTick = [];
-%                 end
-%                 ax.YLim = [0 yAxMax(iax)];
-%                 ax.YTick = 0:yTick(iax):yAxMax(iax);
             end
+            
             linkaxes(obj.Axis.h, 'x');
         end
     end
