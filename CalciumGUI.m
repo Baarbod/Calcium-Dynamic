@@ -1,7 +1,7 @@
 classdef CalciumGUI < handle
     properties
         Figure            % figure handle
-        PlotCount         % Number of plots
+        nCompartment      % Number of cell compartments
         Name              % name of gui figure
         SliderPanel       % panel handle that contains ui elements
         ResetButton       % reset button handle
@@ -19,7 +19,7 @@ classdef CalciumGUI < handle
         function obj = CalciumGUI(Name)
             obj.Name = Name;
             obj.SliderCount = 0;
-            obj.PlotCount = 4;
+            obj.nCompartment = 4;
             obj.Figure = figure('Visible','on','Name',obj.Name);
             movegui(obj.Figure,'center');
         end
@@ -58,13 +58,14 @@ classdef CalciumGUI < handle
         
         % Create the axes; Position = [left bottom width height]
         function obj = createplot(obj)
-            for iplot = 1:obj.PlotCount
-                plotHeight = 1/obj.PlotCount;
-                
+            for iplot = 1:obj.nCompartment
+                plotHeight = 1/obj.nCompartment;
                 obj.Axis.h(iplot) = axes('Units','normalized',...
                     'Position',...
                     [0.03,(1-plotHeight)-(iplot-1)*plotHeight,0.2,plotHeight]);
             end
+            
+            
         end
         
         % Define a slider
