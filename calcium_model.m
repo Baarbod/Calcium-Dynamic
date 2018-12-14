@@ -13,6 +13,14 @@ cI = param(10);
 cS = param(11);
 cM = param(12);
 cN = param(13);
+volCt = param(14);
+volER = param(15);
+volMt = param(16);
+volMd = param(17);
+leak_e_u = param(18);
+leak_e_c = param(19);
+leak_u_c = param(20);
+leak_u_m = param(21);
 
 %% Time
 tstart = 0; % [s]
@@ -20,13 +28,13 @@ tend = 1500; % [s]
 tstep = 0.1; % [s]
 
 %% Cytosol Parameters
-volCyt = 1.5/2; % [pL] volume cytosol
+% volCt = 1.5/2; % [pL] volume cytosol
 % B = 0.02*4*0; % [uM/s] flux into cytosol
 % Vpmca = 0.37; % [uM/s] max membrane efflux of PMCA
 kpmca = 1; % [uM] efflux half max constant for PMCA
 
 %% ER Parameters
-volER = 0.3/3; % [pL] volume ER
+% volER = 0.3/3; % [pL] volume ER
 % Vip3r = 0.5; % [1/s] max flux of IP3R
 % Vserca = 40; % [uM/s] max flus of SERCA pump
 kserca = 0.2; % [uM] activation constant for SERCA pump
@@ -38,7 +46,7 @@ d3 = 0.18; % [uM] IP3R dissociation constant for IP3 sites
 d5 = 0.2; % [uM] IP3R dissociation constant for ca activation sites
 
 %% Mitocondria Parameters
-volMt = 0.45/5; % [pL] volume mitocondria
+% volMt = 0.45/5; % [pL] volume mitocondria
 % Vmcu = 1.45; % [uM/s] max rate of ca uptake by MCU
 kmcu = 1.5; % [uM] half-max rate of ca pumping from cytosol to mitocondria
 % Vncx = 60; % [uM/s] max rate of ca release through NCX
@@ -47,17 +55,17 @@ kna = 9.4; % [mM] Na activation constant for MCU
 N = 10; % [mM] Na in cytosol
 
 %% Leak Parameters
-leak_e_u = 0.02; % [1/s] leak constant from ER to microdomain
-leak_e_c = 0.02; % [1/s] leak constant from ER to microdomain
-leak_u_c = 0.02; % [1/s] leak constant from ER to microdomain
-leak_u_m = 0.02; % [1/s] leak constant from ER to microdomain
+% leak_e_u = 0.02; % [1/s] leak constant from ER to microdomain
+% leak_e_c = 0.02; % [1/s] leak constant from ER to microdomain
+% leak_u_c = 0.02; % [1/s] leak constant from ER to microdomain
+% leak_u_m = 0.02; % [1/s] leak constant from ER to microdomain
 
 %% Microdomain Parameters
 % cI = 0.8; % fraction of IP3R facing microdomain
 % cS = 0.1; % fraction of SERCA facing microdomain
 % cM = 0.8; % fraction of MCU facing microdomain
 % cN = 0.1; % fraction of mNCX facing microdomain
-volMd = 0.3/3; % [pL]
+% volMd = 0.3/3; % [pL]
 
 %% Buffer Parameters
 % bt = 220; % [uM] total buffer concentration in cytosol
@@ -158,13 +166,13 @@ h_u = X(:,ii);
         dcdt = (Jin + Jip3r + Jleak_u_c + Jleak_e_c + Jncx ...
             - Jpmca - Jserca - Jmcu)/(1 + theta);
         
-        dedt = volCyt/volER*(Jserca + Jserca_u ...
+        dedt = volCt/volER*(Jserca + Jserca_u ...
             - Jip3r - Jip3r_u - Jleak_e_u - Jleak_e_c);
         
-        dmdt = volCyt/volMt*(Jmcu + Jmcu_u + Jleak_u_m ...
+        dmdt = volCt/volMt*(Jmcu + Jmcu_u + Jleak_u_m ...
             - Jncx - Jncx_u);
         
-        dudt = volCyt/volMd*(Jip3r_u + Jncx_u + Jleak_e_u ...
+        dudt = volCt/volMd*(Jip3r_u + Jncx_u + Jleak_e_u ...
             - Jserca_u - Jmcu_u - Jleak_u_m - Jleak_u_c);
         
         dhdt = ah*(1 - h) - bh*h;
