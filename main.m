@@ -1,6 +1,6 @@
 clear, clc, close all
 
-gui = GuiInterface([200,200,500,400],'Calcium GUI');
+gui = CalciumGUI('Calcium GUI');
 
 gui = addslider(gui,'IP3 [uM]',0,1,0.47);
 gui = addslider(gui,'Jin [uM/s]',0,2,0.02*4);
