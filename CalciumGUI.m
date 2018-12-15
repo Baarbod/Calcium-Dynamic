@@ -156,7 +156,7 @@ classdef CalciumGUI < handle
                 ax.FontWeight = 'bold';
                 ax.FontName = 'Times New Roman';
                 ax.FontSize = 10;
-                ax.Title.String = stateVarName(iax);
+                legend(ax,stateVarName(iax))
                 ax.Title.FontSize = 12;
                 ax.AmbientLightColor = 'magenta';
                 ax.LineWidth = 1.5;
