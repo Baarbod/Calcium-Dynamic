@@ -1,4 +1,4 @@
-function [t,c,e,m,u] = calcium_model(param)
+function [t, StateVar, NonStateVar] = calcium_model(param)
 
 ip3 = param(1);
 B = param(2);
@@ -83,35 +83,93 @@ N_u = 10; % [mM] Na in microdomain
 % h_uInit = 0.9;
 % X0 = [cInit;eInit;mInit;uInit;hInit;h_uInit];
 % X0 = fsolve(@(X) equations(0,X), X0);
-X0 = [0.3 180 0.07 180 0.7 0.7];
+
+initStateVar = [0.3;180;0.07;180;0.7;0.7];
+initNonStatVar = zeros(14,1);
+X0 = [initStateVar;initNonStatVar];
 
 %% Solve
 tspan = tstart:tstep:tend;
 [t,X] = ode45(@equations,tspan,X0);
 
-%% Assign solutions to state variables
-ii = 1;
-c = X(:,ii); ii = ii + 1;
-e = X(:,ii); ii = ii + 1;
-m = X(:,ii); ii = ii + 1;
-u = X(:,ii); ii = ii + 1;
-h = X(:,ii); ii = ii + 1;
-h_u = X(:,ii);
+%% Assign solutions to output variables
+
+% State Variables
+c = X(:,1);
+e = X(:,2);
+m = X(:,3);
+u = X(:,4);
+h = X(:,5);
+h_u = X(:,6);
+
+% Non-State Variables
+Jip3r = X(:,7);
+Jip3r_u = X(:,8);
+Jserca = X(:,9);
+Jserca_u = X(:,10);
+Jncx = X(:,11);
+Jncx_u = X(:,12);
+Jmcu = X(:,13);
+Jmcu_u = X(:,14);
+Jleak_u_c = X(:,15);
+Jleak_u_m = X(:,16);
+Jleak_e_u = X(:,17);
+Jleak_e_c = X(:,18);
+Jin = X(:,19);
+Jpmca = X(:,20);
+
+% State Variables
+StateVar.c = c;
+StateVar.e = e;
+StateVar.m = m;
+StateVar.u = u;
+
+% Non-State Variables
+NonStateVar.Jip3r = Jip3r;
+NonStateVar.Jip3r_u = Jip3r_u;
+NonStateVar.Jserca = Jserca;
+NonStateVar.Jserca_u = Jserca_u;
+NonStateVar.Jncx = Jncx;
+NonStateVar.Jncx_u = Jncx_u;
+NonStateVar.Jmcu = Jmcu;
+NonStateVar.Jmcu_u = Jmcu_u;
+NonStateVar.Jleak_u_c = Jleak_u_c;
+NonStateVar.Jleak_u_m = Jleak_u_m;
+NonStateVar.Jleak_e_u = Jleak_e_u;
+NonStateVar.Jleak_e_c = Jleak_e_c;
+NonStateVar.Jin = Jin;
+NonStateVar.Jpmca = Jpmca;
+
 
 %% Setup differential equations to be solved using ODE solver
 
     function dXdt = equations(t,X)
         
         %% Assign State Variables
-        ii = 1;
-        c = X(ii); ii = ii + 1;
-        e = X(ii); ii = ii + 1;
-        m = X(ii); ii = ii + 1;
-        u = X(ii); ii = ii + 1;
-        h = X(ii); ii = ii + 1;
-        h_u = X(ii);
+        c = X(1);
+        e = X(2);
+        m = X(3);
+        u = X(4);
+        h = X(5);
+        h_u = X(6);
         
-        %% Non-State Variables
+        %% Assign Non-State Variables
+        Jip3r = X(7);
+        Jip3r_u = X(8);
+        Jserca = X(9);
+        Jserca_u = X(10);
+        Jncx = X(11);
+        Jncx_u = X(12);
+        Jmcu = X(13);
+        Jmcu_u = X(14);
+        Jleak_u_c = X(15);
+        Jleak_u_m = X(16);
+        Jleak_e_u = X(17);
+        Jleak_e_c = X(18);
+        Jin = X(19);
+        Jpmca = X(20);
+        
+        %% Compute Non-State Variables
         % IP3R
         sact = h*((ip3/(ip3 + d1)) * c/(c + d5));
         Poip3r = sact^4 + 4*sact^3*(1 - sact);
@@ -141,12 +199,12 @@ h_u = X(:,ii);
         Jmcu_u = cM*Vmcu*(u^2/(kmcu^2 + u^2));
         
         % leaks
-        Jleak_u_c = leak_u_c*(u - c); 
+        Jleak_u_c = leak_u_c*(u - c);
         Jleak_u_m = leak_u_m*(u - m);
         Jleak_e_u = leak_e_u*(e - u);
         Jleak_e_c = leak_e_c*(e - c);
         
-        % Influx 
+        % Influx
         Jin = B;
         
         % PMCA
@@ -158,11 +216,11 @@ h_u = X(:,ii);
         
         % h_u
         bh_u = a2*u;
-               
+        
         % buffering
         theta = bt*K/((K + c)^2); % buffer factor
-
-        %% Differential Equations
+        
+        %% Compute State Variables
         dcdt = (Jin + Jip3r + Jleak_u_c + Jleak_e_c + Jncx ...
             - Jpmca - Jserca - Jmcu)/(1 + theta);
         
@@ -182,13 +240,29 @@ h_u = X(:,ii);
         %% Assign equations to function output
         dXdt = zeros(numel(X),1);
         
-        ii = 1;
-        dXdt(ii) = dcdt; ii = ii + 1;
-        dXdt(ii) = dedt; ii = ii + 1;
-        dXdt(ii) = dmdt; ii = ii + 1;
-        dXdt(ii) = dudt; ii = ii + 1;
-        dXdt(ii) = dhdt; ii = ii + 1;
-        dXdt(ii) = dh_udt;
+        % State Variables
+        dXdt(1) = dcdt;
+        dXdt(2) = dedt;
+        dXdt(3) = dmdt;
+        dXdt(4) = dudt;
+        dXdt(5) = dhdt;
+        dXdt(6) = dh_udt;
+        
+        % Non-State Variables
+        dXdt(7) = Jip3r;
+        dXdt(8) = Jip3r_u;
+        dXdt(9) = Jserca;
+        dXdt(10) = Jserca_u;
+        dXdt(11) = Jncx;
+        dXdt(12) = Jncx_u;
+        dXdt(13) = Jmcu;
+        dXdt(14) = Jmcu_u;
+        dXdt(15) = Jleak_u_c;
+        dXdt(16) = Jleak_u_m;
+        dXdt(17) = Jleak_e_u;
+        dXdt(18) = Jleak_e_c;
+        dXdt(19) = Jin;
+        dXdt(20) = Jpmca;
         
     end
 end
