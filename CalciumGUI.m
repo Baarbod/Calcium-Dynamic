@@ -1,7 +1,7 @@
 classdef CalciumGUI < handle
     properties
         Figure            % figure handle
-        nCompartment      % Number of cell compartments
+        nPlot             % Number plots
         Name              % name of gui figure
         SliderPanel       % panel handle that contains ui elements
         ResetButton       % reset button handle
@@ -10,7 +10,8 @@ classdef CalciumGUI < handle
         SliderHandle      % slider handles
         Parameters        % array of current slider values
         InitialParam      % intial slider values
-        State             % array of current state variables
+        StateVar          % current state variables
+        NonStateVar       % current non-state variables
     end
     
     methods
@@ -19,7 +20,7 @@ classdef CalciumGUI < handle
         function obj = CalciumGUI(Name)
             obj.Name = Name;
             obj.SliderCount = 0;
-            obj.nCompartment = 4;
+            obj.nPlot = 20;
             obj.Figure = figure('Visible','on','Name',obj.Name);
             movegui(obj.Figure,'center');
         end
@@ -28,8 +29,8 @@ classdef CalciumGUI < handle
         function obj = createpanel(obj)
             obj.SliderPanel.Controls = uipanel('Title','Parameter Control',...
                 'FontSize',10,'FontWeight','bold','Position',[.80 0.1 0.20 0.9]);
-        end 
-       
+        end
+        
         function obj = addresetbutton(obj)
             obj.ResetButton = ...
                 uicontrol('Style','pushbutton',...
@@ -56,15 +57,30 @@ classdef CalciumGUI < handle
             updateaxes(obj);
         end
         
+        %         % Create the axes; Position = [left bottom width height]
+        %         function obj = createplot(obj)
+        %             for iplot = 1:obj.nPlot
+        %                 plotHeight = 1/obj.nPlot;
+        %                 obj.Axis.h(iplot) = axes('Units','normalized',...
+        %                     'Position',...
+        %                     [0.03,(1-plotHeight)-(iplot-1)*plotHeight,0.2,plotHeight]);
+        %             end
+        %
+        %         end
+        
         % Create the axes; Position = [left bottom width height]
         function obj = createplot(obj)
-            for iplot = 1:obj.nCompartment
-                plotHeight = 1/obj.nCompartment;
-                obj.Axis.h(iplot) = axes('Units','normalized',...
+            height = 1/5-0.02;
+            width = 0.8/4-0.02;
+            iplot = 0;
+            for irow = 1:5
+                for icol = 1:4
+                    iplot = iplot + 1;
+                     obj.Axis.h(iplot) = axes('Units','normalized',...
                     'Position',...
-                    [0.03,(1-plotHeight)-(iplot-1)*plotHeight,0.2,plotHeight]);
+                    [(icol-1)*width 1-(irow*height) width height]);
+                end
             end
-            
             
         end
         
@@ -86,7 +102,7 @@ classdef CalciumGUI < handle
             
             obj.Parameters(obj.SliderCount,1) = ...
                 obj.SliderHandle.s(obj.SliderCount).Value;
-          
+            
             updatetext(obj);
         end
         
@@ -101,7 +117,7 @@ classdef CalciumGUI < handle
                     [0 (1-height*0.3)-height*i 0.3 height];
             end
         end
-       
+        
         % Update the text showing current slider values
         function obj = updatetext(obj)
             for i = 1:obj.SliderCount
@@ -122,12 +138,27 @@ classdef CalciumGUI < handle
         
         % Run model with current parameters
         function obj = solvemodel(obj)
-            [t,c,e,m,u] = calcium_model(obj.Parameters);
-            obj.State(:,1) = t;
-            obj.State(:,2) = c;
-            obj.State(:,3) = e;
-            obj.State(:,4) = m;
-            obj.State(:,5) = u;
+            [t, state, nonstate] = calcium_model(obj.Parameters);
+            obj.StateVar(:,1) = t;
+            obj.StateVar(:,2) = state.c;
+            obj.StateVar(:,3) = state.e;
+            obj.StateVar(:,4) = state.m;
+            obj.StateVar(:,5) = state.u;
+            
+            obj.NonStateVar(:,1) = nonstate.Jip3r;
+            obj.NonStateVar(:,2) = nonstate.Jip3r_u;
+            obj.NonStateVar(:,3) = nonstate.Jserca;
+            obj.NonStateVar(:,4) = nonstate.Jserca_u;
+            obj.NonStateVar(:,5) = nonstate.Jncx;
+            obj.NonStateVar(:,6) = nonstate.Jncx_u;
+            obj.NonStateVar(:,7) = nonstate.Jmcu;
+            obj.NonStateVar(:,8) = nonstate.Jmcu_u;
+            obj.NonStateVar(:,9) = nonstate.Jleak_u_c;
+            obj.NonStateVar(:,10) = nonstate.Jleak_u_m;
+            obj.NonStateVar(:,11) = nonstate.Jleak_e_u;
+            obj.NonStateVar(:,12) = nonstate.Jleak_e_c;
+            obj.NonStateVar(:,13) = nonstate.Jin;
+            obj.NonStateVar(:,14) = nonstate.Jpmca;
         end
         
         % Update the plots based on current model state
@@ -135,16 +166,50 @@ classdef CalciumGUI < handle
             updateparameters(obj);
             solvemodel(obj);
             updatetext(obj);
-            t = obj.State(:,1);
-            c = obj.State(:,2);
-            e = obj.State(:,3);
-            m = obj.State(:,4);
-            u = obj.State(:,5);
+            
+            % state variables
+            t = obj.StateVar(:,1);
+            c = obj.StateVar(:,2);
+            e = obj.StateVar(:,3);
+            m = obj.StateVar(:,4);
+            u = obj.StateVar(:,5);
             stateVarList(:,1) = c;
             stateVarList(:,2) = m;
             stateVarList(:,3) = e;
             stateVarList(:,4) = u;
             stateVarName = ["Cytosol","Mitocondria","ER","Microdomain"];
+            
+            % non-state variables
+            Jip3r = obj.NonStateVar(:,1);
+            Jip3r_u = obj.NonStateVar(:,1);
+            Jserca = obj.NonStateVar(:,1);
+            Jserca_u = obj.NonStateVar(:,1);
+            Jncx = obj.NonStateVar(:,1);
+            Jncx_u = obj.NonStateVar(:,1);
+            Jmcu = obj.NonStateVar(:,1);
+            Jmcu_u = obj.NonStateVar(:,1);
+            Jleak_u_c = obj.NonStateVar(:,1);
+            Jleak_u_m = obj.NonStateVar(:,1);
+            Jleak_e_u = obj.NonStateVar(:,1);
+            Jleak_e_c = obj.NonStateVar(:,1);
+            Jin = obj.NonStateVar(:,1);
+            Jpmca = obj.NonStateVar(:,1);
+            
+            nonStateVarList(:,1) = Jip3r;
+            nonStateVarList(:,2) = Jip3r_u;
+            nonStateVarList(:,3) = Jserca;
+            nonStateVarList(:,4) = Jserca_u;
+            nonStateVarList(:,5) = Jncx;
+            nonStateVarList(:,6) = Jncx_u;
+            nonStateVarList(:,7) = Jmcu;
+            nonStateVarList(:,8) = Jmcu_u;
+            nonStateVarList(:,9) = Jleak_u_c;
+            nonStateVarList(:,10) = Jleak_u_m;
+            nonStateVarList(:,11) = Jleak_e_u;
+            nonStateVarList(:,12) = Jleak_e_c;
+            nonStateVarList(:,13) = Jin;
+            nonStateVarList(:,14) = Jpmca;
+            
             
             for iax = 1:4
                 ax = obj.Axis.h(1,iax);
@@ -161,6 +226,7 @@ classdef CalciumGUI < handle
                 ax.AmbientLightColor = 'magenta';
                 ax.LineWidth = 1.5;
             end
+            
             
             linkaxes(obj.Axis.h, 'x');
         end
