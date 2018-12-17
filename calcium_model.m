@@ -43,6 +43,7 @@ Vncx = P.Vncx.Value;        % [uM/s] max rate of ca release through NCX
 kncx = P.kncx.Value;        % [uM] activation constant for NCX
 kna = P.kna.Value;          % [mM] Na activation constant for MCU
 N = P.N.Value;              % [mM] Na in cytosol
+N_u = P.N_u.Value;          % [mM] Na in microdomain
 leak_e_u = P.leak_e_u.Value; % [1/s] leak constant from ER to Md
 leak_e_c = P.leak_e_c.Value; % [1/s] leak constant from ER to Ct
 leak_u_c = P.leak_u_c.Value; % [1/s] leak constant from Md to Ct
@@ -51,9 +52,14 @@ cI = P.cI.Value;            % fraction of IP3R facing microdomain
 cS = P.cS.Value;            % fraction of SERCA facing microdomain
 cM = P.cM.Value;            % fraction of MCU facing microdomain
 cN = P.cN.Value;            % fraction of mNCX facing microdomain
-bt = P.bt.Value;      % [uM] total buffer concentration in cytosol
-K = P.K.Value;        % buffer rate constant ratio (Qi 2015)
-N_u = P.N_u.Value;    % [mM] Na in microdomain
+bt_c = P.bt_c.Value;      % [uM] total buffer concentration in cytosol
+K_c = P.K_c.Value;        % buffer rate constant ratio (Qi 2015)
+bt_e = P.bt_e.Value;      % [uM] total buffer concentration in ER
+K_e = P.K_e.Value;        % buffer rate constant ratio (Qi 2015)
+bt_m = P.bt_m.Value;      % [uM] total buffer concentration in mitocondria
+K_m = P.K_m.Value;        % buffer rate constant ratio (Qi 2015)
+bt_u = P.bt_u.Value;      % [uM] total buffer concentration in micro-domain
+K_u = P.K_u.Value;        % buffer rate constant ratio (Qi 2015)
 
 
 %% Time
@@ -76,11 +82,11 @@ initNonStatVar = zeros(14,1);
 X0 = [initStateVar;initNonStatVar];
 
 %% Solve
-ismember('showchannelplot',modelOptions)
 M = zeros(length(initStateVar),length(initStateVar));
 options = odeset;
 options.Mass = M;
 options.MassSingular = 'yes';
+
 
 tspan = tstart:tstep:tend;
 [t,X] = ode15s(@equations,tspan,X0);
@@ -252,6 +258,10 @@ end
         
         % Influx
         Jin = Jin;
+%         rINmax = 0.005; % [uM/s]
+%         kIN1 = 0.01; % [s]
+%         Jin = rINmax*(t/(kIN1+t));
+%         Jin = 0.08;
         
         % PMCA
         Jpmca = Vpmca*c/(kpmca + c);
@@ -264,20 +274,23 @@ end
         bh_u = a2*u;
         
         % buffering
-        theta = bt*K/((K + c)^2); % buffer factor
+        theta_c = bt_c*K_c/((K_c + c)^2); % buffer factor
+        theta_e = bt_e*K_e/((K_e + e)^2); % buffer factor
+        theta_m = bt_m*K_m/((K_m + m)^2); % buffer factor
+        theta_u = bt_u*K_u/((K_u + u)^2); % buffer factor
         
         %% Compute State Variables
         dcdt = (Jin + Jip3r + Jleak_u_c + Jleak_e_c + Jncx ...
-            - Jpmca - Jserca - Jmcu)/(1 + theta);
+            - Jpmca - Jserca - Jmcu)/(1 + theta_c);
         
-        dedt = volCt/volER*(Jserca + Jserca_u ...
-            - Jip3r - Jip3r_u - Jleak_e_u - Jleak_e_c);
+        dedt = (volCt/volER*(Jserca + Jserca_u ...
+            - Jip3r - Jip3r_u - Jleak_e_u - Jleak_e_c))/(1 + theta_e);
         
-        dmdt = volCt/volMt*(Jmcu + Jmcu_u + Jleak_u_m ...
-            - Jncx - Jncx_u);
+        dmdt = (volCt/volMt*(Jmcu + Jmcu_u + Jleak_u_m ...
+            - Jncx - Jncx_u))/(1 + theta_m);
         
-        dudt = volCt/volMd*(Jip3r_u + Jncx_u + Jleak_e_u ...
-            - Jserca_u - Jmcu_u - Jleak_u_m - Jleak_u_c);
+        dudt = (volCt/volMd*(Jip3r_u + Jncx_u + Jleak_e_u ...
+            - Jserca_u - Jmcu_u - Jleak_u_m - Jleak_u_c))/(1 + theta_u);
         
         dhdt = ah*(1 - h) - bh*h;
         
