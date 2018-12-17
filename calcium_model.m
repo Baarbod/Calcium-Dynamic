@@ -1,78 +1,65 @@
-function [t, StateVar, NonStateVar] = calcium_model(param)
+function [t, StateVar, NonStateVar] = calcium_model(varargin)
+% Input Options:
+%   -showcompartmentplot
+%   -showchannelplot 
 
-ip3 = param(1);
-B = param(2);
-bt = param(3);
-K = param(4);
-Vpmca = param(5);
-Vip3r = param(6);
-Vserca = param(7);
-Vmcu = param(8);
-Vncx = param(9);
-% cI = param(10);
-% cS = param(11);
-% cM = param(12);
-% cN = param(13);
-% volCt = param(14);
-% volER = param(15);
-% volMt = param(16);
-% volMd = param(17);
-% leak_e_u = param(18);
-% leak_e_c = param(19);
-% leak_u_c = param(20);
-% leak_u_m = param(21);
+nOpt = 0;
+modelOptions = {};
+for i = 1:length(varargin)
+    if ischar(varargin{i}) && varargin{i}(1) == '-'
+        nOpt = nOpt + 1;
+        modelOptions{nOpt} = varargin{i}(2:end);
+        varargin{i} = [];
+    end
+end
+
+varargin( cellfun( @isempty, varargin ) ) = [];
+
+if isempty(varargin)
+    P = setparameterlist({},[]);
+elseif isstruct(varargin{1})
+    P = varargin{1};
+end
+
+volCt = P.volCt.Value;      % [pL] volume cytosol
+volMd = P.volMd.Value;      % [pL] volume microdomain
+volER = P.volER.Value;      % [pL] volume ER
+volMt = P.volMt.Value;      % [pL] volume mitocondria
+B = P.B.Value;              % [uM/s] flux into cytosol
+Vpmca = P.Vpmca.Value;      % [uM/s] max membrane efflux of PMCA
+kpmca = P.kpmca.Value;      % [uM] efflux half max constant for PMCA
+Vip3r = P.Vip3r.Value;      % [1/s] max flux of IP3R
+Vserca = P.Vserca.Value;    % [uM/s] max flux of SERCA pump
+kserca = P.kserca.Value;    % [uM] activation constant for SERCA pump
+ip3 = P.ip3.Value;          % [uM] IP3 in the cytosol
+a2 = P.a2.Value; % [uM^-1*s^-1] IP3R binding rate ca inhibition sites
+d1 = P.d1.Value; % [uM] IP3R dissociation constant for IP3 sites
+d2 = P.d2.Value; % [uM] IP3R dissociation constant for ca inhibition sites
+d3 = P.d3.Value; % [uM] IP3R dissociation constant for IP3 sites
+d5 = P.d5.Value; % [uM] IP3R dissociation constant for ca activation sites
+Vmcu = P.Vmcu.Value;        % [uM/s] max rate of ca uptake by MCU
+kmcu = P.kmcu.Value;        % [uM] half-max rate of ca pumping from c to m
+Vncx = P.Vncx.Value;        % [uM/s] max rate of ca release through NCX
+kncx = P.kncx.Value;        % [uM] activation constant for NCX
+kna = P.kna.Value;          % [mM] Na activation constant for MCU
+N = P.N.Value;              % [mM] Na in cytosol
+leak_e_u = P.leak_e_u.Value; % [1/s] leak constant from ER to Md
+leak_e_c = P.leak_e_c.Value; % [1/s] leak constant from ER to Ct
+leak_u_c = P.leak_u_c.Value; % [1/s] leak constant from Md to Ct
+leak_u_m = P.leak_u_m.Value; % [1/s] leak constant from Md to Mt
+cI = P.cI.Value;            % fraction of IP3R facing microdomain
+cS = P.cS.Value;            % fraction of SERCA facing microdomain
+cM = P.cM.Value;            % fraction of MCU facing microdomain
+cN = P.cN.Value;            % fraction of mNCX facing microdomain
+bt = P.bt.Value;      % [uM] total buffer concentration in cytosol
+K = P.K.Value;        % buffer rate constant ratio (Qi 2015)
+N_u = P.N_u.Value;    % [mM] Na in microdomain
+
 
 %% Time
 tstart = 0; % [s]
 tend = 1500; % [s]
 tstep = 0.1; % [s]
-
-%% Cytosol Parameters
-volCt = 1.5/2; % [pL] volume cytosol
-% B = 0.02*4*0; % [uM/s] flux into cytosol
-% Vpmca = 0.37; % [uM/s] max membrane efflux of PMCA
-kpmca = 1; % [uM] efflux half max constant for PMCA
-
-%% ER Parameters
-volER = 0.3/3; % [pL] volume ER
-% Vip3r = 0.5; % [1/s] max flux of IP3R
-% Vserca = 40; % [uM/s] max flus of SERCA pump
-kserca = 0.2; % [uM] activation constant for SERCA pump
-% ip3 = 0.56; % [uM] IP3 in the cytosol
-a2 = 0.02; % [uM^-1*s^-1 IP3R binding rate constant for ca inhibition sites
-d1 = 0.018; % [uM] IP3R dissociation constant for IP3 sites
-d2 = 1.5; % [uM] IP3R dissociation constant for ca inhibition sites
-d3 = 0.18; % [uM] IP3R dissociation constant for IP3 sites
-d5 = 0.2; % [uM] IP3R dissociation constant for ca activation sites
-
-%% Mitocondria Parameters
-volMt = 0.45/5; % [pL] volume mitocondria
-% Vmcu = 1.45; % [uM/s] max rate of ca uptake by MCU
-kmcu = 1.5; % [uM] half-max rate of ca pumping from cytosol to mitocondria
-% Vncx = 60; % [uM/s] max rate of ca release through NCX
-kncx = 35; % [uM] activation constant for NCX
-kna = 9.4; % [mM] Na activation constant for MCU
-N = 10; % [mM] Na in cytosol
-
-%% Leak Parameters
-leak_e_u = 0.02*0; % [1/s] leak constant from ER to microdomain
-leak_e_c = 0.02; % [1/s] leak constant from ER to microdomain
-leak_u_c = 0.02*0; % [1/s] leak constant from ER to microdomain
-leak_u_m = 0.02*0; % [1/s] leak constant from ER to microdomain
-
-%% Microdomain Parameters
-cI = 0.8; % fraction of IP3R facing microdomain
-cS = 0.1; % fraction of SERCA facing microdomain
-cM = 0.8; % fraction of MCU facing microdomain
-cN = 0.1; % fraction of mNCX facing microdomain
-volMd = 0.3/3; % [pL]
-
-%% Buffer Parameters
-% bt = 220; % [uM] total buffer concentration in cytosol
-% K = 10; % buffer rate constant ratio (Qi 2015)
-
-%% Microdomain parameters
-N_u = 10; % [mM] Na in microdomain
 
 %% Initial Conditions
 % cInit = 0.1; % [uM]
@@ -89,6 +76,7 @@ initNonStatVar = zeros(14,1);
 X0 = [initStateVar;initNonStatVar];
 
 %% Solve
+ismember('showchannelplot',modelOptions)
 M = zeros(length(initStateVar),length(initStateVar));
 options = odeset;
 options.Mass = M;
@@ -145,6 +133,59 @@ NonStateVar.Jleak_e_c = Jleak_e_c;
 NonStateVar.Jin = Jin;
 NonStateVar.Jpmca = Jpmca;
 
+
+%% Plot Cytosol
+if ismember('showcompartmentplot',modelOptions)
+    fields = fieldnames(StateVar);
+    for i = 1:numel(fields)
+        figure
+        VarXaxis = t;
+        VarYaxis = StateVar.(fields{i});
+        h = plot(VarXaxis,VarYaxis);
+        h.LineWidth = 1.5;
+        h.Color = 'b';
+        
+        fig = gcf;
+        fig.Color = 'w';
+        
+        ax = gca;
+        ax.FontWeight = 'bold';
+        ax.FontName = 'Times New Roman';
+        ax.FontSize = 10;
+        ax.Title.String = ["Compartment: " fields{i}];
+        ax.Title.FontSize = 18;
+        ax.AmbientLightColor = 'magenta';
+        ax.LineWidth = 1.5;
+        ax.XAxis.Label.String = 'Time (sec)';
+        ax.YAxis.Label.String = '[Ca] \muM';
+    end
+end
+
+if ismember('showchannelplot',modelOptions)
+    fields = fieldnames(NonStateVar);
+    for i = 1:numel(fields)
+        figure
+        VarXaxis = t;
+        VarYaxis = NonStateVar.(fields{i});
+        h = plot(VarXaxis,VarYaxis);
+        h.LineWidth = 1.5;
+        h.Color = 'b';
+        
+        fig = gcf;
+        fig.Color = 'w';
+        
+        ax = gca;
+        ax.FontWeight = 'bold';
+        ax.FontName = 'Times New Roman';
+        ax.FontSize = 10;
+        ax.Title.String = ["Channel: " fields{i}];
+        ax.Title.FontSize = 18;
+        ax.AmbientLightColor = 'magenta';
+        ax.LineWidth = 1.5;
+        ax.XAxis.Label.String = 'Time (sec)';
+        ax.YAxis.Label.String = '[Ca] \muM';
+    end
+end
 
 %% Setup differential equations to be solved using ODE solver
 
