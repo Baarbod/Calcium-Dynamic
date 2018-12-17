@@ -25,7 +25,7 @@ volCt = P.volCt.Value;      % [pL] volume cytosol
 volMd = P.volMd.Value;      % [pL] volume microdomain
 volER = P.volER.Value;      % [pL] volume ER
 volMt = P.volMt.Value;      % [pL] volume mitocondria
-B = P.B.Value;              % [uM/s] flux into cytosol
+Jin = P.Jin.Value;          % [uM/s] flux into cytosol
 Vpmca = P.Vpmca.Value;      % [uM/s] max membrane efflux of PMCA
 kpmca = P.kpmca.Value;      % [uM] efflux half max constant for PMCA
 Vip3r = P.Vip3r.Value;      % [1/s] max flux of IP3R
@@ -251,7 +251,7 @@ end
         Jleak_e_c = leak_e_c*(e - c);
         
         % Influx
-        Jin = B;
+        Jin = Jin;
         
         % PMCA
         Jpmca = Vpmca*c/(kpmca + c);
