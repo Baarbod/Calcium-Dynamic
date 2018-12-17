@@ -5,10 +5,13 @@ classdef CalciumGUI < handle
         Name              % name of gui figure
         SliderPanel       % panel handle that contains ui elements
         ResetButton       % reset button handle
+        ExportButton      % parameter export button handle
         Axis              % axis handles
         SliderCount       % number of sliders
         SliderHandle      % slider handles
+        SliderNameList    % slider parameter names 
         Parameters        % array of current slider values
+        ParamSetStructure % P structure used as model input
         InitialParam      % intial slider values
         StateVar          % current state variables
         NonStateVar       % current non-state variables
@@ -20,7 +23,8 @@ classdef CalciumGUI < handle
         function obj = CalciumGUI(Name)
             obj.Name = Name;
             obj.SliderCount = 0;
-            obj.nPlot = 20;
+            obj.nPlot = 4;
+            obj.SliderNameList = cell.empty;
             obj.Figure = figure('Visible','on','Name',obj.Name);
             movegui(obj.Figure,'center');
         end
@@ -37,7 +41,7 @@ classdef CalciumGUI < handle
                 'String','RESET',...
                 'FontSize',10,...
                 'Units','normalized',...
-                'Position',[0.80 0 0.075 0.075],...
+                'Position',[0.80 0 0.0666 0.075],...
                 'Callback',@obj.resetgui);
         end
         
@@ -51,34 +55,65 @@ classdef CalciumGUI < handle
             updateaxes(obj);
         end
         
+        function obj = addexportparambutton(obj)
+            obj.ExportButton = ...
+                uicontrol('Style','pushbutton',...
+                'String','EXPORT',...
+                'FontSize',10,...
+                'Units','normalized',...
+                'Position',[0.8666 0 0.0666 0.075],...
+                'Callback',@obj.exportparam);
+        end
+        
+        function obj = exportparam(obj,~,~)
+            ParamSet = obj.Parameters;
+            path = uigetdir(pwd,'Select path for output');
+            name = char(inputdlg("Enter parameter set name"));
+            save([path '\' name],'ParamSet') 
+        end
+        
+        function obj = addimportparambutton(obj)
+            obj.ExportButton = ...
+                uicontrol('Style','pushbutton',...
+                'String','IMPORT',...
+                'FontSize',10,...
+                'Units','normalized',...
+                'Position',[0.9332 0 0.0666 0.075],...
+                'Callback',@obj.importparam);
+        end
+        
+        function obj = importparam(obj,~,~)
+            [pSet,path] = uigetfile;
+            obj.Parameters = load([path pSet]);
+            
+            for i = 1:obj.SliderCount
+                obj.SliderHandle.s(i,1).Value = ...
+                    obj.Parameters.ParamSet(i);
+            end
+            
+            updateaxes(obj)
+        end
+        
+        
         % Define the initial parameters based on starting slider values
         function obj = initstate(obj)
             obj.InitialParam = obj.Parameters;
             updateaxes(obj);
         end
-        
-        %         % Create the axes; Position = [left bottom width height]
-        %         function obj = createplot(obj)
-        %             for iplot = 1:obj.nPlot
-        %                 plotHeight = 1/obj.nPlot;
-        %                 obj.Axis.h(iplot) = axes('Units','normalized',...
-        %                     'Position',...
-        %                     [0.03,(1-plotHeight)-(iplot-1)*plotHeight,0.2,plotHeight]);
-        %             end
-        %
-        %         end
-        
+
         % Create the axes; Position = [left bottom width height]
         function obj = createplot(obj)
-            height = 1/5-0.02;
-            width = 0.8/4-0.02;
+            nRow = 2;
+            nCol = 2;
+            height = 1/nRow-0.05;
+            width = 0.8/nCol-0.05;
             iplot = 0;
-            for irow = 1:5
-                for icol = 1:4
+            for irow = 1:nRow
+                for icol = 1:nCol
                     iplot = iplot + 1;
                      obj.Axis.h(iplot) = axes('Units','normalized',...
                     'Position',...
-                    [(icol-1)*width 1-(irow*height) width height]);
+                    [0.03+1.1*(icol-1)*width 1-1.05*(irow*height) width height]);
                 end
             end
             
@@ -103,6 +138,8 @@ classdef CalciumGUI < handle
             obj.Parameters(obj.SliderCount,1) = ...
                 obj.SliderHandle.s(obj.SliderCount).Value;
             
+            obj.SliderNameList(obj.SliderCount,1) = cellstr(sName);
+            
             updatetext(obj);
         end
         
@@ -114,7 +151,7 @@ classdef CalciumGUI < handle
                 obj.SliderHandle.s(i,1).Position = ...
                     [1-width 1-height*i width height];
                 obj.SliderHandle.t(i,1).Position = ...
-                    [0 (1-height*0.3)-height*i 0.3 height];
+                    [0 (1-height*0.3)-height*i 0.35 height];
             end
         end
         
@@ -136,9 +173,23 @@ classdef CalciumGUI < handle
             end
         end
         
+        function obj = formatparamlist(obj)
+            list = obj.SliderNameList;
+            for i = 1:length(list)
+                chr = char(list(i,:));
+                brackS = find(chr=='[');
+                brackE = find(chr==']');
+                chr(brackS:brackE) = [];
+                list(i,:) = cellstr(chr);
+            end
+            obj.SliderNameList = list;
+        end
+        
         % Run model with current parameters
         function obj = solvemodel(obj)
-            [t, state, nonstate] = calcium_model(obj.Parameters);
+            obj.ParamSetStructure = ...
+                setparameterlist(obj.SliderNameList,obj.Parameters);
+            [t, state, nonstate] = calcium_model(obj.ParamSetStructure);
             obj.StateVar(:,1) = t;
             obj.StateVar(:,2) = state.c;
             obj.StateVar(:,3) = state.e;
@@ -163,9 +214,10 @@ classdef CalciumGUI < handle
         
         % Update the plots based on current model state
         function obj = updateaxes(obj,~,~)
+            
+            updatetext(obj);
             updateparameters(obj);
             solvemodel(obj);
-            updatetext(obj);
             
             % state variables
             t = obj.StateVar(:,1);
