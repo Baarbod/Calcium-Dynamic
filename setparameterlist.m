@@ -54,12 +54,6 @@ PBase.d2.Value = 1.5;
 PBase.d3.Value = 0.18;
 PBase.d5.Value = 0.2;
 
-defineslider(gui,'a2 [uM^-1*s^-1]',0,1,0.02)
-defineslider(gui,'d1 [uM]',0,1,0.018)
-defineslider(gui,'d2 [uM]',0,3,1.5)
-defineslider(gui,'d3 [uM]',0,1,0.18)
-defineslider(gui,'d5 [uM]',0,1,0.2)
-
 
 %% Make sure param values are in correct position
 a = fieldnames(PBase);
