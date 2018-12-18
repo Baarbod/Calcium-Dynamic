@@ -23,6 +23,11 @@ defineslider(gui,'Vip3r [1/s]'   ,0,2,0.5);
 defineslider(gui,'Vserca [uM/s]' ,0,200,40);
 defineslider(gui,'Vmcu [uM/s]'   ,0,4,1.45);
 defineslider(gui,'Vncx [uM/s]'   ,0,100,60);
+defineslider(gui,'a2 [uM^-1*s^-1]',0,1,0.02)
+defineslider(gui,'d1 [uM]',0,1,0.018)
+defineslider(gui,'d2 [uM]',0,3,1.5)
+defineslider(gui,'d3 [uM]',0,1,0.18)
+defineslider(gui,'d5 [uM]',0,1,0.2)
 defineslider(gui,'cI'            ,0,1,0.23*0);
 defineslider(gui,'cS'            ,0,1,0.1*0);
 defineslider(gui,'cM'            ,0,1,0.02*0);
