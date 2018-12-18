@@ -4,13 +4,7 @@ AllParamNameList = {'volCt','volMd','volER','volMt','Jin','Vpmca','kpmca',...
     'Vip3r','Vserca','kserca','ip3','a2','d1','d2','d3','d5','Vmcu',...
     'kmcu','Vncx','kncx','kna','N','N_u','leak_e_u','leak_e_c','leak_u_c',...
     'leak_u_m','cI','cS','cM','cN','bt_c','K_c','bt_e','K_e',...
-    'bt_m','K_m','bt_u','K_u'}';
-
-% AllParamNameList = {'volCt','volMd','volER','volMt','Vpmca','kpmca',...
-%     'Vip3r','Vserca','kserca','ip3','a2','d1','d2','d3','d5','Vmcu',...
-%     'kmcu','Vncx','kncx','kna','N','N_u','leak_e_u','leak_e_c','leak_u_c',...
-%     'leak_u_m','cI','cS','cM','cN','bt_c','K_c','bt_e','K_e',...
-%     'bt_m','K_m','bt_u','K_u'}';
+    'bt_m','K_m','bt_u','K_u','a2','d1','d2','d3','d5'}';
 
 nAllParam = numel(AllParamNameList);
 
@@ -54,6 +48,17 @@ PBase.bt_m.Value = 220;
 PBase.K_m.Value = 10; 
 PBase.bt_u.Value = 220;
 PBase.K_u.Value = 10; 
+PBase.a2.Value = 0.02;
+PBase.d1.Value = 0.018;
+PBase.d2.Value = 1.5;
+PBase.d3.Value = 0.18;
+PBase.d5.Value = 0.2;
+
+defineslider(gui,'a2 [uM^-1*s^-1]',0,1,0.02)
+defineslider(gui,'d1 [uM]',0,1,0.018)
+defineslider(gui,'d2 [uM]',0,3,1.5)
+defineslider(gui,'d3 [uM]',0,1,0.18)
+defineslider(gui,'d5 [uM]',0,1,0.2)
 
 
 %% Make sure param values are in correct position
