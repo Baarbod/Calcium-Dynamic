@@ -103,7 +103,7 @@ classdef CalciumGUI < handle
 
         % Create the axes; Position = [left bottom width height]
         function obj = createplot(obj)
-            nRow = 2;
+            nRow = 3;
             nCol = 2;
             height = 1/nRow-0.05;
             width = 0.8/nCol-0.05;
@@ -189,27 +189,13 @@ classdef CalciumGUI < handle
         function obj = solvemodel(obj)
             obj.ParamSetStructure = ...
                 setparameterlist(obj.SliderNameList,obj.Parameters);
-            [t, state, nonstate] = calcium_model(obj.ParamSetStructure);
+            [t, state, ~] = calcium_model(obj.ParamSetStructure);
             obj.StateVar(:,1) = t;
             obj.StateVar(:,2) = state.c;
             obj.StateVar(:,3) = state.e;
             obj.StateVar(:,4) = state.m;
             obj.StateVar(:,5) = state.u;
-            
-            obj.NonStateVar(:,1) = nonstate.Jip3r;
-            obj.NonStateVar(:,2) = nonstate.Jip3r_u;
-            obj.NonStateVar(:,3) = nonstate.Jserca;
-            obj.NonStateVar(:,4) = nonstate.Jserca_u;
-            obj.NonStateVar(:,5) = nonstate.Jncx;
-            obj.NonStateVar(:,6) = nonstate.Jncx_u;
-            obj.NonStateVar(:,7) = nonstate.Jmcu;
-            obj.NonStateVar(:,8) = nonstate.Jmcu_u;
-            obj.NonStateVar(:,9) = nonstate.Jleak_u_c;
-            obj.NonStateVar(:,10) = nonstate.Jleak_u_m;
-            obj.NonStateVar(:,11) = nonstate.Jleak_e_u;
-            obj.NonStateVar(:,12) = nonstate.Jleak_e_c;
-            obj.NonStateVar(:,13) = nonstate.Jin;
-            obj.NonStateVar(:,14) = nonstate.Jpmca;
+
         end
         
         % Update the plots based on current model state
@@ -230,39 +216,7 @@ classdef CalciumGUI < handle
             stateVarList(:,3) = e;
             stateVarList(:,4) = u;
             stateVarName = ["Cytosol","Mitocondria","ER","Microdomain"];
-            
-            % non-state variables
-            Jip3r = obj.NonStateVar(:,1);
-            Jip3r_u = obj.NonStateVar(:,1);
-            Jserca = obj.NonStateVar(:,1);
-            Jserca_u = obj.NonStateVar(:,1);
-            Jncx = obj.NonStateVar(:,1);
-            Jncx_u = obj.NonStateVar(:,1);
-            Jmcu = obj.NonStateVar(:,1);
-            Jmcu_u = obj.NonStateVar(:,1);
-            Jleak_u_c = obj.NonStateVar(:,1);
-            Jleak_u_m = obj.NonStateVar(:,1);
-            Jleak_e_u = obj.NonStateVar(:,1);
-            Jleak_e_c = obj.NonStateVar(:,1);
-            Jin = obj.NonStateVar(:,1);
-            Jpmca = obj.NonStateVar(:,1);
-            
-            nonStateVarList(:,1) = Jip3r;
-            nonStateVarList(:,2) = Jip3r_u;
-            nonStateVarList(:,3) = Jserca;
-            nonStateVarList(:,4) = Jserca_u;
-            nonStateVarList(:,5) = Jncx;
-            nonStateVarList(:,6) = Jncx_u;
-            nonStateVarList(:,7) = Jmcu;
-            nonStateVarList(:,8) = Jmcu_u;
-            nonStateVarList(:,9) = Jleak_u_c;
-            nonStateVarList(:,10) = Jleak_u_m;
-            nonStateVarList(:,11) = Jleak_e_u;
-            nonStateVarList(:,12) = Jleak_e_c;
-            nonStateVarList(:,13) = Jin;
-            nonStateVarList(:,14) = Jpmca;
-            
-            
+                   
             for iax = 1:4
                 ax = obj.Axis.h(1,iax);
                 h = plot(t,stateVarList(:,iax),'Parent',ax);
