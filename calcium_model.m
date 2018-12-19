@@ -258,11 +258,7 @@ end
         
         % Influx
         Jin = Jin;
-%         rINmax = 0.005; % [uM/s]
-%         kIN1 = 0.01; % [s]
-%         Jin = rINmax*(t/(kIN1+t));
-%         Jin = 0.08;
-        
+
         % PMCA
         Jpmca = Vpmca*c/(kpmca + c);
         
