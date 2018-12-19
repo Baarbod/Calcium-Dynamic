@@ -6,6 +6,7 @@ classdef CalciumGUI < handle
         SliderPanel       % panel handle that contains ui elements
         ResetButton       % reset button handle
         ExportButton      % parameter export button handle
+        ShowFluxButton    % button that shows channel flux plots
         Axis              % axis handles
         SliderCount       % number of sliders
         SliderHandle      % slider handles
@@ -41,7 +42,7 @@ classdef CalciumGUI < handle
                 'String','RESET',...
                 'FontSize',10,...
                 'Units','normalized',...
-                'Position',[0.80 0 0.0666 0.075],...
+                'Position',[0.80 0 0.05 0.075],...
                 'Callback',@obj.resetgui);
         end
         
@@ -61,7 +62,7 @@ classdef CalciumGUI < handle
                 'String','EXPORT',...
                 'FontSize',10,...
                 'Units','normalized',...
-                'Position',[0.8666 0 0.0666 0.075],...
+                'Position',[0.85 0 0.05 0.075],...
                 'Callback',@obj.exportparam);
         end
         
@@ -78,7 +79,7 @@ classdef CalciumGUI < handle
                 'String','IMPORT',...
                 'FontSize',10,...
                 'Units','normalized',...
-                'Position',[0.9332 0 0.0666 0.075],...
+                'Position',[0.90 0 0.05 0.075],...
                 'Callback',@obj.importparam);
         end
         
@@ -94,6 +95,21 @@ classdef CalciumGUI < handle
             updateaxes(obj)
         end
         
+        function obj = addshowfluxbutton(obj)
+            obj.ShowFluxButton = ...
+                uicontrol('Style','pushbutton',...
+                'String','FLUX',...
+                'FontSize',10,...
+                'Units','normalized',...
+                'Position',[0.95 0 0.05 0.075],...
+                'Callback',@obj.showflux);
+        end
+        
+        function obj = showflux(obj,~,~)
+            [~, ~, ~] = calcium_model(obj.ParamSetStructure,...
+                '-showchannelplot');
+        end
+        
         
         % Define the initial parameters based on starting slider values
         function obj = initstate(obj)
@@ -105,7 +121,7 @@ classdef CalciumGUI < handle
         function obj = createplot(obj)
             nRow = 3;
             nCol = 2;
-            height = 1/nRow-0.05;
+            height = 1/nRow-0.04;
             width = 0.8/nCol-0.05;
             iplot = 0;
             for irow = 1:nRow
@@ -113,7 +129,7 @@ classdef CalciumGUI < handle
                     iplot = iplot + 1;
                      obj.Axis.h(iplot) = axes('Units','normalized',...
                     'Position',...
-                    [0.03+1.1*(icol-1)*width 1-1.05*(irow*height) width height]);
+                    [0.03+1.1*(icol-1)*width 1-1.1*(irow*height) width height]);
                 end
             end
             
@@ -151,7 +167,7 @@ classdef CalciumGUI < handle
                 obj.SliderHandle.s(i,1).Position = ...
                     [1-width 1-height*i width height];
                 obj.SliderHandle.t(i,1).Position = ...
-                    [0 (1-height*0.3)-height*i 0.35 height];
+                    [0 (1-height*0.3)-height*i 0.4 height];
             end
         end
         
@@ -190,12 +206,27 @@ classdef CalciumGUI < handle
             obj.ParamSetStructure = ...
                 setparameterlist(obj.SliderNameList,obj.Parameters);
             [t, state, ~] = calcium_model(obj.ParamSetStructure);
+            
+            %% ONLY LAST 5%
+%             tf = t(end);
+%             time_window = 0.1*tf;
+%             tplot = t(t>(t(end) - time_window));
+%             cplot = state.c(t>(t(end) - time_window));
+%             eplot = state.e(t>(t(end) - time_window));
+%             mplot = state.m(t>(t(end) - time_window));
+%             uplot = state.u(t>(t(end) - time_window));
+%             obj.StateVar(:,1) = tplot;
+%             obj.StateVar(:,2) = cplot;
+%             obj.StateVar(:,3) = eplot;
+%             obj.StateVar(:,4) = mplot;
+%             obj.StateVar(:,5) = uplot;
+
             obj.StateVar(:,1) = t;
             obj.StateVar(:,2) = state.c;
             obj.StateVar(:,3) = state.e;
             obj.StateVar(:,4) = state.m;
             obj.StateVar(:,5) = state.u;
-
+            
         end
         
         % Update the plots based on current model state
@@ -233,8 +264,65 @@ classdef CalciumGUI < handle
                 ax.LineWidth = 1.5;
             end
             
+            % NORMALIZED PLOT HARD CODED
+            ax = obj.Axis.h(1,5);
+            time_window = 0.1*t(end);
+            tplot = t(t>(t(end) - time_window));
+            cplot = c(t>(t(end) - time_window));cplotNORM = cplot/max(cplot);
+            eplot = e(t>(t(end) - time_window));eplotNORM = eplot/max(eplot);
+            mplot = m(t>(t(end) - time_window));mplotNORM = mplot/max(mplot);
+            uplot = u(t>(t(end) - time_window)); uplotNORM = uplot/max(uplot);
+            h = plot(tplot,[cplotNORM, eplotNORM, mplotNORM, uplotNORM],'Parent',ax); 
+            legend(ax,{'c','e','m','u'})
+            h(1).LineWidth = 1.2; 
+            h(2).LineWidth = 1.2;
+            h(3).LineWidth = 1.2; 
+            h(4).LineWidth = 1.2; 
+            fig = gcf;
+            fig.Color = 'w';
+            ax.FontWeight = 'bold';
+            ax.FontName = 'Times New Roman';
+            ax.FontSize = 10;
+            ax.Title.FontSize = 12;
+            ax.AmbientLightColor = 'magenta';
+            ax.LineWidth = 1.5;
             
-            linkaxes(obj.Axis.h, 'x');
+            %% OPEN PROBABILITY PLOT
+            ax = obj.Axis.h(1,6);
+            ip3 = obj.Parameters(1);
+            a2 = obj.Parameters(32);
+            d1 = obj.Parameters(33); 
+            d2 = obj.Parameters(34); 
+            d3 = obj.Parameters(35); 
+            d5 = obj.Parameters(36);
+            kserca = obj.Parameters(21);
+            kmcu = obj.Parameters(22);
+            c = 0:1000;            
+            ah = a2*d2*(ip3 + d1)/(ip3 + d3);
+            bh = a2*c;
+            h = ah./(ah+bh);
+            sact = h.*((ip3/(ip3 + d1)) * c./(c + d5));
+            OP_ip3 = sact.^4 + 4*sact.^3.*(1 - sact);
+            OP_serca = c.^2./(kserca^2 + c.^2);            
+            OP_mcu = (c.^2/(kmcu^2 + c.^2));            
+%             OP_mncx = (N^3/(kna^3 + N^3))*(m/(kncx + m));
+            h = semilogx(c,OP_ip3,c,OP_serca,c,OP_mcu,'Parent',ax);
+            
+            h(1).LineWidth = 1.2;
+            h(2).LineWidth = 1.2;
+            h(3).LineWidth = 1.2;
+            legend(ax,{'IP3','SERCA','MCU'})
+            fig = gcf;
+            fig.Color = 'w';
+            ax.FontWeight = 'bold';
+            ax.FontName = 'Times New Roman';
+            ax.FontSize = 10;
+            ax.Title.FontSize = 12;
+            ax.AmbientLightColor = 'magenta';
+            ax.LineWidth = 1.5;
+            
+
+            linkaxes(obj.Axis.h(1:4), 'x');
         end
     end
 end
