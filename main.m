@@ -52,7 +52,7 @@ formatparamlist(gui);
 addresetbutton(gui);
 addexportparambutton(gui);
 addimportparambutton(gui);
-addshowfluxbutton(gui);
+addfluxbutton(gui);
 
 createplot(gui);
 
