@@ -15,11 +15,7 @@ end
 
 varargin( cellfun( @isempty, varargin ) ) = [];
 
-if isempty(varargin)
-    P = setparameterlist({},[]);
-elseif isstruct(varargin{1})
-    P = varargin{1};
-end
+P = varargin{1};
 
 volCt = P.volCt.Value;      % [pL] volume cytosol
 volMd = P.volMd.Value;      % [pL] volume microdomain
@@ -32,11 +28,11 @@ Vip3r = P.Vip3r.Value;      % [1/s] max flux of IP3R
 Vserca = P.Vserca.Value;    % [uM/s] max flux of SERCA pump
 kserca = P.kserca.Value;    % [uM] activation constant for SERCA pump
 ip3 = P.ip3.Value;          % [uM] IP3 in the cytosol
-a2 = P.a2.Value; % [uM^-1*s^-1] IP3R binding rate ca inhibition sites
-d1 = P.d1.Value; % [uM] IP3R dissociation constant for IP3 sites
-d2 = P.d2.Value; % [uM] IP3R dissociation constant for ca inhibition sites
-d3 = P.d3.Value; % [uM] IP3R dissociation constant for IP3 sites
-d5 = P.d5.Value; % [uM] IP3R dissociation constant for ca activation sites
+a2 = P.a2.Value;            % [uM^-1*s^-1] IP3R binding rate ca inhibition sites
+d1 = P.d1.Value;            % [uM] IP3R dissociation constant for IP3 sites
+d2 = P.d2.Value;            % [uM] IP3R dissociation constant for ca inhibition sites
+d3 = P.d3.Value;            % [uM] IP3R dissociation constant for IP3 sites
+d5 = P.d5.Value;            % [uM] IP3R dissociation constant for ca activation sites
 Vmcu = P.Vmcu.Value;        % [uM/s] max rate of ca uptake by MCU
 kmcu = P.kmcu.Value;        % [uM] half-max rate of ca pumping from c to m
 Vncx = P.Vncx.Value;        % [uM/s] max rate of ca release through NCX
@@ -60,7 +56,6 @@ bt_m = P.bt_m.Value;      % [uM] total buffer concentration in mitocondria
 K_m = P.K_m.Value;        % buffer rate constant ratio (Qi 2015)
 bt_u = P.bt_u.Value;      % [uM] total buffer concentration in micro-domain
 K_u = P.K_u.Value;        % buffer rate constant ratio (Qi 2015)
-
 
 %% Time
 tstart = 0; % [s]
