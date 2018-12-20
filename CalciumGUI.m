@@ -8,14 +8,18 @@ classdef CalciumGUI < handle
         hExportButton     % parameter export button handle
         hFluxButton       % button that shows channel flux plots
         hAxis             % Axis handles
-        SliderCount       % number of sliders
+        nParam            % number of sliders
         hSlider           % slider handles
-        SliderNameList    % slider parameter names 
-        Parameters        % array of current slider values
-        ParamSetStructure % P structure used as model input
-        InitialParam      % intial slider values
+        
+        InitialParam
+        ParamNameList     % list of all parameter names
+        ParamValueList    % list of all parameter values
+        ParamUnitList
+        Parameters        % intial slider values
+        
         StateVar          % current state variables
         NonStateVar       % current non-state variables
+        
     end
     
     methods
@@ -23,9 +27,7 @@ classdef CalciumGUI < handle
         % Constructor
         function obj = CalciumGUI(Name)
             obj.Name = Name;
-            obj.SliderCount = 0;
             obj.nPlot = 4;
-            obj.SliderNameList = cell.empty;
             obj.Figure = figure('Visible','on','Name',obj.Name);
             movegui(obj.Figure,'center');
         end
@@ -106,15 +108,32 @@ classdef CalciumGUI < handle
         end
         
         function obj = showflux(obj,~,~)
-            [~, ~, ~] = calcium_model(obj.ParamSetStructure,...
+            [~, ~, ~] = calcium_model(obj.Parameters,...
                 '-showchannelplot');
         end
         
         
         % Define the initial parameters based on starting slider values
-        function obj = initstate(obj)
-            obj.InitialParam = obj.Parameters;
-            updateaxes(obj);
+        function obj = initstate(obj,pinit,pname,punit,pvalue)
+            obj.InitialParam = pinit;
+            obj.Parameters = pinit;
+            obj.ParamNameList = pname;
+            obj.ParamUnitList = punit;
+            obj.ParamValueList = pvalue;
+            obj.nParam = numel(obj.ParamNameList);
+        end
+        
+        function obj = initgui(obj)
+            createpanel(obj);
+            setsliders(obj);
+            setsliderposition(obj);           
+            updatetext(obj);            
+            addresetbutton(obj);            
+            addexportparambutton(obj);            
+            addimportparambutton(obj);            
+            addfluxbutton(obj);            
+            createplot(obj); 
+            updateaxes(obj)
         end
 
         % Create the axes; Position = [left bottom width height]
@@ -136,34 +155,32 @@ classdef CalciumGUI < handle
         end
         
         % Define a slider
-        function obj = defineslider(obj,sName,sMin,sMax,sInitVal)
-            obj.SliderCount = obj.SliderCount + 1;
-            obj.hSlider.s(obj.SliderCount,1) = ...
-                uicontrol('Parent',obj.SliderPanel.Controls,...
-                'Style','slider',...
-                'String',sName,...
-                'Min',sMin,'Max',sMax,'Value',sInitVal,...
-                'SliderStep',[0.01 0.1],...
-                'Units','normalized',...
-                'Callback',@obj.updateaxes);
-            obj.hSlider.t(obj.SliderCount,1) = ...
-                uicontrol('Parent',obj.SliderPanel.Controls,...
-                'Style','text',...
-                'Units','normalized');
-            
-            obj.Parameters(obj.SliderCount,1) = ...
-                obj.hSlider.s(obj.SliderCount).Value;
-            
-            obj.SliderNameList(obj.SliderCount,1) = cellstr(sName);
-            
-            updatetext(obj);
+        function obj = setsliders(obj)
+            for i = 1:obj.nParam
+                paramName = obj.ParamNameList{i};
+                paramValue = obj.ParamValueList{i};
+                sMin = 0;
+                sMax = paramValue*2;
+                obj.hSlider.s(i,1) = ...
+                    uicontrol('Parent',obj.SliderPanel.Controls,...
+                    'Style','slider',...
+                    'String',paramName,...
+                    'Min',sMin,'Max',sMax,'Value',paramValue,...
+                    'SliderStep',[0.01 0.1],...
+                    'Units','normalized',...
+                    'Callback',@obj.updateaxes);
+                obj.hSlider.t(i,1) = ...
+                    uicontrol('Parent',obj.SliderPanel.Controls,...
+                    'Style','text',...
+                    'Units','normalized');
+            end
         end
         
         % Set all current slider positions
         function obj = setsliderposition(obj)
             width = 0.6;
-            height = 1/obj.SliderCount;
-            for i = 1:obj.SliderCount
+            height = 1/obj.nParam;
+            for i = 1:obj.nParam
                 obj.hSlider.s(i,1).Position = ...
                     [1-width 1-height*i width height];
                 obj.hSlider.t(i,1).Position = ...
@@ -173,54 +190,28 @@ classdef CalciumGUI < handle
         
         % Update the text showing current slider values
         function obj = updatetext(obj)
-            for i = 1:obj.SliderCount
-                name = obj.hSlider.s(i).String;
+            for i = 1:obj.nParam
+                name = obj.ParamNameList{i};
                 val = obj.hSlider.s(i).Value;
-                obj.hSlider.t(i).String = [name ': ' num2str(val)];
+                unit = char(obj.ParamUnitList{i});
+                obj.hSlider.t(i).String = ...
+                    [name ' ' unit ': ' num2str(val)];
                 obj.hSlider.t(i).FontSize = 10;
             end
         end
         
         % Update parameters to be used as model input
         function obj = updateparameters(obj)
-            obj.Parameters = zeros(obj.SliderCount,1);
-            for i = 1:obj.SliderCount
-                obj.Parameters(i,1) = obj.hSlider.s(i).Value;
+            obj.ParamValueList = zeros(obj.nParam,1);
+            for i = 1:obj.nParam
+                obj.ParamValueList(i,1) = obj.hSlider.s(i).Value;
             end
-        end
-        
-        function obj = formatparamlist(obj)
-            list = obj.SliderNameList;
-            for i = 1:length(list)
-                chr = char(list(i,:));
-                brackS = find(chr=='[');
-                brackE = find(chr==']');
-                chr(brackS:brackE) = [];
-                list(i,:) = cellstr(chr);
-            end
-            obj.SliderNameList = list;
         end
         
         % Run model with current parameters
         function obj = solvemodel(obj)
-            obj.ParamSetStructure = ...
-                setparameterlist(obj.SliderNameList,obj.Parameters);
-            [t, state, ~] = calcium_model(obj.ParamSetStructure);
+            [t, state, ~] = calcium_model(obj.Parameters);
             
-            %% ONLY LAST 5%
-%             tf = t(end);
-%             time_window = 0.1*tf;
-%             tplot = t(t>(t(end) - time_window));
-%             cplot = state.c(t>(t(end) - time_window));
-%             eplot = state.e(t>(t(end) - time_window));
-%             mplot = state.m(t>(t(end) - time_window));
-%             uplot = state.u(t>(t(end) - time_window));
-%             obj.StateVar(:,1) = tplot;
-%             obj.StateVar(:,2) = cplot;
-%             obj.StateVar(:,3) = eplot;
-%             obj.StateVar(:,4) = mplot;
-%             obj.StateVar(:,5) = uplot;
-
             obj.StateVar(:,1) = t;
             obj.StateVar(:,2) = state.c;
             obj.StateVar(:,3) = state.e;
@@ -287,41 +278,6 @@ classdef CalciumGUI < handle
             ax.AmbientLightColor = 'magenta';
             ax.LineWidth = 1.5;
             
-            %% OPEN PROBABILITY PLOT
-            ax = obj.hAxis.h(1,6);
-            ip3 = obj.Parameters(1);
-            a2 = obj.Parameters(32);
-            d1 = obj.Parameters(33); 
-            d2 = obj.Parameters(34); 
-            d3 = obj.Parameters(35); 
-            d5 = obj.Parameters(36);
-            kserca = obj.Parameters(21);
-            kmcu = obj.Parameters(22);
-            c = 0:1000;            
-            ah = a2*d2*(ip3 + d1)/(ip3 + d3);
-            bh = a2*c;
-            h = ah./(ah+bh);
-            sact = h.*((ip3/(ip3 + d1)) * c./(c + d5));
-            OP_ip3 = sact.^4 + 4*sact.^3.*(1 - sact);
-            OP_serca = c.^2./(kserca^2 + c.^2);            
-            OP_mcu = (c.^2/(kmcu^2 + c.^2));            
-%             OP_mncx = (N^3/(kna^3 + N^3))*(m/(kncx + m));
-            h = semilogx(c,OP_ip3,c,OP_serca,c,OP_mcu,'Parent',ax);
-            
-            h(1).LineWidth = 1.2;
-            h(2).LineWidth = 1.2;
-            h(3).LineWidth = 1.2;
-            legend(ax,{'IP3','SERCA','MCU'})
-            fig = gcf;
-            fig.Color = 'w';
-            ax.FontWeight = 'bold';
-            ax.FontName = 'Times New Roman';
-            ax.FontSize = 10;
-            ax.Title.FontSize = 12;
-            ax.AmbientLightColor = 'magenta';
-            ax.LineWidth = 1.5;
-            
-
             linkaxes(obj.hAxis.h(1:4), 'x');
         end
     end
