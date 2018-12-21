@@ -180,13 +180,14 @@ classdef CalciumGUI < handle
                 ax = obj.hAxis.h(1,iax);
                 h = plot(t,stateVarList(:,iax),'Parent',ax);
                 h.LineWidth = 1.2;
-                h.Color = 'b';
+                h.Color = 'k';
                 fig = gcf;
                 fig.Color = 'w';
                 ax.FontWeight = 'bold';
                 ax.FontName = 'Times New Roman';
                 ax.FontSize = 10;
-                legend(ax,stateVarName(iax))
+%                 legend(ax,stateVarName(iax))
+                ax.Title.String = stateVarName(iax);
                 ax.Title.FontSize = 12;
                 ax.AmbientLightColor = 'magenta';
                 ax.LineWidth = 1.5;
@@ -215,7 +216,7 @@ classdef CalciumGUI < handle
             ax.AmbientLightColor = 'magenta';
             ax.LineWidth = 1.5;
             
-%             linkaxes(obj.hAxis.h(1:4), 'x');
+            linkaxes(obj.hAxis.h(1:4), 'x');
         end        
                     
         % Button returns the system to it's initial state
