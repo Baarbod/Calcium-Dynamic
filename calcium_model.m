@@ -1,10 +1,11 @@
 function [t, StateVar, NonStateVar] = calcium_model(varargin)
 % Input Options:
 %   -showplot
-%   -showchannelplot 
+%   -showfluxplot 
+%   -usesubplot
 
 nOpt = 0;
-modelOptions = {};
+modelOptions = cell(1,3);
 for i = 1:length(varargin)
     if ischar(varargin{i}) && varargin{i}(1) == '-'
         nOpt = nOpt + 1;
@@ -13,6 +14,7 @@ for i = 1:length(varargin)
     end
 end
 
+modelOptions = modelOptions(~cellfun('isempty',modelOptions));
 varargin( cellfun( @isempty, varargin ) ) = [];
 
 P = varargin{1};
@@ -137,15 +139,20 @@ NonStateVar.Jpmca = Jpmca;
 
 
 %% Plot Cytosol
+
 if ismember('showplot',modelOptions)
     fields = fieldnames(StateVar);
     for i = 1:numel(fields)
-        figure
         VarXaxis = t;
         VarYaxis = StateVar.(fields{i});
+        if ismember('usesubplot',modelOptions)
+            subplot(2,2,i)
+        else
+            figure
+        end
         h = plot(VarXaxis,VarYaxis);
         h.LineWidth = 1.5;
-        h.Color = 'b';
+        h.Color = 'k';
         
         fig = gcf;
         fig.Color = 'w';
@@ -163,15 +170,19 @@ if ismember('showplot',modelOptions)
     end
 end
 
-if ismember('showchannelplot',modelOptions)
+if ismember('showfluxplot',modelOptions)
     fields = fieldnames(NonStateVar);
     for i = 1:numel(fields)
-        figure
         VarXaxis = t;
         VarYaxis = NonStateVar.(fields{i});
+        if ismember('usesubplot',modelOptions)
+            subplot(3,5,i)
+        else
+            figure
+        end
         h = plot(VarXaxis,VarYaxis);
         h.LineWidth = 1.5;
-        h.Color = 'b';
+        h.Color = 'k';
         
         fig = gcf;
         fig.Color = 'w';
@@ -181,7 +192,7 @@ if ismember('showchannelplot',modelOptions)
         ax.FontName = 'Times New Roman';
         ax.FontSize = 10;
         ax.Title.String = ["Channel: " fields{i}];
-        ax.Title.FontSize = 18;
+        ax.Title.FontSize = 12;
         ax.AmbientLightColor = 'magenta';
         ax.LineWidth = 1.5;
         ax.XAxis.Label.String = 'Time (sec)';
