@@ -89,28 +89,29 @@ tspan = tstart:tstep:tend;
 %% Assign solutions to output variables
 
 % State Variables
-c = X(:,1);
-e = X(:,2);
-m = X(:,3);
-u = X(:,4);
-h = X(:,5);
-h_u = X(:,6);
+k = 1;
+c = X(:,k);     k = k + 1;
+e = X(:,k);     k = k + 1;
+m = X(:,k);     k = k + 1;
+u = X(:,k);     k = k + 1;
+h = X(:,k);     k = k + 1;
+h_u = X(:,k);   k = k + 1;
 
 % Non-State Variables
-Jip3r = X(:,7);
-Jip3r_u = X(:,8);
-Jserca = X(:,9);
-Jserca_u = X(:,10);
-Jncx = X(:,11);
-Jncx_u = X(:,12);
-Jmcu = X(:,13);
-Jmcu_u = X(:,14);
-Jleak_u_c = X(:,15);
-Jleak_u_m = X(:,16);
-Jleak_e_u = X(:,17);
-Jleak_e_c = X(:,18);
-Jin = X(:,19);
-Jpmca = X(:,20);
+Jip3r = X(:,k);     k = k + 1;
+Jip3r_u = X(:,k);   k = k + 1;
+Jserca = X(:,k);    k = k + 1;
+Jserca_u = X(:,k);  k = k + 1;
+Jncx = X(:,k);      k = k + 1;
+Jncx_u = X(:,k);    k = k + 1;
+Jmcu = X(:,k);      k = k + 1;
+Jmcu_u = X(:,k);    k = k + 1;
+Jleak_u_c = X(:,k); k = k + 1;
+Jleak_u_m = X(:,k); k = k + 1;
+Jleak_e_u = X(:,k); k = k + 1;
+Jleak_e_c = X(:,k); k = k + 1;
+Jin = X(:,k);       k = k + 1;
+Jpmca = X(:,k); 
 
 % State Variables
 StateVar.c = c;
@@ -192,29 +193,30 @@ end
 
     function dXdt = equations(t,X)
         
-        %% Assign State Variables
-        c = X(1);
-        e = X(2);
-        m = X(3);
-        u = X(4);
-        h = X(5);
-        h_u = X(6);
+        % State Variables
+        k = 1;
+        c = X(k);     k = k + 1;
+        e = X(k);     k = k + 1;
+        m = X(k);     k = k + 1;
+        u = X(k);     k = k + 1;
+        h = X(k);     k = k + 1;
+        h_u = X(k);   k = k + 1;
         
-        %% Assign Non-State Variables
-        nsJip3r = X(7);
-        nsJip3r_u = X(8);
-        nsJserca = X(9);
-        nsJserca_u = X(10);
-        nsJncx = X(11);
-        nsJncx_u = X(12);
-        nsJmcu = X(13);
-        nsJmcu_u = X(14);
-        nsJleak_u_c = X(15);
-        nsJleak_u_m = X(16);
-        nsJleak_e_u = X(17);
-        nsJleak_e_c = X(18);
-        nsJin = X(19);
-        nsJpmca = X(20);
+        % Non-State Variables
+        nsJip3r = X(k);     k = k + 1;
+        nsJip3r_u = X(k);   k = k + 1;
+        nsJserca = X(k);    k = k + 1;
+        nsJserca_u = X(k);  k = k + 1;
+        nsJncx = X(k);      k = k + 1;
+        nsJncx_u = X(k);    k = k + 1;
+        nsJmcu = X(k);      k = k + 1;
+        nsJmcu_u = X(k);    k = k + 1;
+        nsJleak_u_c = X(k); k = k + 1;
+        nsJleak_u_m = X(k); k = k + 1;
+        nsJleak_e_u = X(k); k = k + 1;
+        nsJleak_e_c = X(k); k = k + 1;
+        nsJin = X(k);       k = k + 1;
+        nsJpmca = X(k);
         
         %% Compute Non-State Variables
         % IP3R
@@ -291,28 +293,29 @@ end
         dXdt = zeros(numel(X),1);
         
         % State Variables
-        dXdt(1) = dcdt;
-        dXdt(2) = dedt;
-        dXdt(3) = dmdt;
-        dXdt(4) = dudt;
-        dXdt(5) = dhdt;
-        dXdt(6) = dh_udt;
+        k = 1;
+        dXdt(k) = dcdt;     k = k + 1;
+        dXdt(k) = dedt;     k = k + 1;
+        dXdt(k) = dmdt;     k = k + 1;
+        dXdt(k) = dudt;     k = k + 1;
+        dXdt(k) = dhdt;     k = k + 1;
+        dXdt(k) = dh_udt;   k = k + 1;
         
         % Non-State Variables
-        dXdt(7) = Jip3r - nsJip3r;
-        dXdt(8) = Jip3r_u - nsJip3r_u;
-        dXdt(9) = Jserca - nsJserca;
-        dXdt(10) = Jserca_u - nsJserca_u;
-        dXdt(11) = Jncx - nsJncx;
-        dXdt(12) = Jncx_u - nsJncx_u;
-        dXdt(13) = Jmcu - nsJmcu;
-        dXdt(14) = Jmcu_u - nsJmcu_u;
-        dXdt(15) = Jleak_u_c - nsJleak_u_c;
-        dXdt(16) = Jleak_u_m - nsJleak_u_m;
-        dXdt(17) = Jleak_e_u - nsJleak_e_u;
-        dXdt(18) = Jleak_e_c - nsJleak_e_c;
-        dXdt(19) = Jin - nsJin;
-        dXdt(20) = Jpmca - nsJpmca;
+        dXdt(k) = Jip3r - nsJip3r;          k = k + 1;
+        dXdt(k) = Jip3r_u - nsJip3r_u;      k = k + 1;
+        dXdt(k) = Jserca - nsJserca;        k = k + 1;
+        dXdt(k) = Jserca_u - nsJserca_u;    k = k + 1;
+        dXdt(k) = Jncx - nsJncx;            k = k + 1;
+        dXdt(k) = Jncx_u - nsJncx_u;        k = k + 1;
+        dXdt(k) = Jmcu - nsJmcu;            k = k + 1;
+        dXdt(k) = Jmcu_u - nsJmcu_u;        k = k + 1;
+        dXdt(k) = Jleak_u_c - nsJleak_u_c;  k = k + 1;
+        dXdt(k) = Jleak_u_m - nsJleak_u_m;  k = k + 1;
+        dXdt(k) = Jleak_e_u - nsJleak_e_u;  k = k + 1;
+        dXdt(k) = Jleak_e_c - nsJleak_e_c;  k = k + 1;
+        dXdt(k) = Jin - nsJin;              k = k + 1;
+        dXdt(k) = Jpmca - nsJpmca;         
         
     end
 end
