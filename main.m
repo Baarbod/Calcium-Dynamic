@@ -1,12 +1,14 @@
 clear, clc, close all
 
+%% Instantiate from GUI Class
+
 gui = CalciumGUI('Calcium GUI');
 
-P = makePstruc();
+P = initparamlist;
 
-initstate(gui,pinit,pname,punit,pvalue);
+initparam(gui,P);
 
-initgui(gui)
+initgui(gui);
 
 
 
