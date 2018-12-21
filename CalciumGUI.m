@@ -14,6 +14,7 @@ classdef CalciumGUI < handle
         InitialParam
         ParamNameList     % list of all parameter names
         ParamValueList    % list of all parameter values
+        ParamUnitList
         Parameters        % intial slider values
         
         StateVar          % current state variables
@@ -37,21 +38,27 @@ classdef CalciumGUI < handle
                 'FontSize',10,'FontWeight','bold','Position',[.80 0.1 0.20 0.9]);
         end
         
-        % Define the initial parameters based on starting slider values
-        function obj = initstate(obj,pinit,pname,punit,pvalue)
-            obj.InitialParam = pinit;
-            obj.Parameters = pinit;
-            obj.ParamNameList = pname;
-            obj.ParamUnitList = punit;
-            obj.ParamValueList = pvalue;
+        % Initialize all parameter properties
+        function obj = initparam(obj,P)
+            obj.InitialParam = P;
+            obj.Parameters = P;
+            obj.ParamNameList = fieldnames(obj.Parameters);
             obj.nParam = numel(obj.ParamNameList);
+            obj.ParamUnitList = cell(obj.nParam,1);
+            obj.ParamValueList = zeros(obj.nParam,1);
+            for i = 1:obj.nParam
+                obj.ParamValueList(i) = ...
+                    obj.Parameters.(obj.ParamNameList{i}).Value;
+                obj.ParamUnitList{i,1} = ...
+                    obj.Parameters.(obj.ParamNameList{i}).Unit;
+            end       
         end
         
+        % Setup all GUI components and solve initial system
         function obj = initgui(obj)
             createpanel(obj);
             setsliders(obj);
             setsliderposition(obj);           
-            updatetext(obj);            
             addresetbutton(obj);            
             addexportparambutton(obj);            
             addimportparambutton(obj);            
@@ -78,11 +85,11 @@ classdef CalciumGUI < handle
             
         end
         
-        % Define a slider
+        % Set all the information for all sliders
         function obj = setsliders(obj)
             for i = 1:obj.nParam
                 paramName = obj.ParamNameList{i};
-                paramValue = obj.ParamValueList{i};
+                paramValue = obj.ParamValueList(i);
                 sMin = 0;
                 sMax = paramValue*2;
                 obj.hSlider.s(i,1) = ...
@@ -100,7 +107,7 @@ classdef CalciumGUI < handle
             end
         end
         
-        % Set all current slider positions
+        % Set all slider positions
         function obj = setsliderposition(obj)
             width = 0.6;
             height = 1/obj.nParam;
@@ -118,8 +125,12 @@ classdef CalciumGUI < handle
                 name = obj.ParamNameList{i};
                 val = obj.hSlider.s(i).Value;
                 unit = char(obj.ParamUnitList{i});
-                obj.hSlider.t(i).String = ...
-                    [name ' ' unit ': ' num2str(val)];
+                if isempty(unit)
+                    sliderText = [name ' ' unit ': ' num2str(val)];
+                else
+                    sliderText = [name ' [' unit ']: ' num2str(val)];
+                end
+                obj.hSlider.t(i).String = sliderText;
                 obj.hSlider.t(i).FontSize = 10;
             end
         end
@@ -129,7 +140,10 @@ classdef CalciumGUI < handle
             obj.ParamValueList = zeros(obj.nParam,1);
             for i = 1:obj.nParam
                 obj.ParamValueList(i,1) = obj.hSlider.s(i).Value;
+                obj.Parameters.(obj.ParamNameList{i}).Value =...
+                    obj.hSlider.s(i).Value;
             end
+                
         end
         
         % Run model with current parameters
@@ -157,6 +171,7 @@ classdef CalciumGUI < handle
             e = obj.StateVar(:,3);
             m = obj.StateVar(:,4);
             u = obj.StateVar(:,5);
+            
             stateVarList(:,1) = c;
             stateVarList(:,2) = m;
             stateVarList(:,3) = e;
@@ -202,9 +217,10 @@ classdef CalciumGUI < handle
             ax.AmbientLightColor = 'magenta';
             ax.LineWidth = 1.5;
             
-            linkaxes(obj.hAxis.h(1:4), 'x');
-        end
-        
+%             linkaxes(obj.hAxis.h(1:4), 'x');
+        end        
+                    
+        % Button returns the system to it's initial state
         function obj = addresetbutton(obj)
             obj.hResetButton = ...
                 uicontrol('Style','pushbutton',...
@@ -225,6 +241,7 @@ classdef CalciumGUI < handle
             updateaxes(obj);
         end
         
+        % Button allows user to export current parameter set
         function obj = addexportparambutton(obj)
             obj.hExportButton  = ...
                 uicontrol('Style','pushbutton',...
@@ -235,6 +252,7 @@ classdef CalciumGUI < handle
                 'Callback',@obj.exportparam);
         end
         
+        % Callback function for export button
         function obj = exportparam(obj,~,~)
             ParamSet = obj.Parameters;
             path = uigetdir(pwd,'Select path for output');
@@ -242,6 +260,7 @@ classdef CalciumGUI < handle
             save([path '\' name],'ParamSet') 
         end
         
+        % Button allows user to import a parameter set
         function obj = addimportparambutton(obj)
             obj.hExportButton  = ...
                 uicontrol('Style','pushbutton',...
@@ -252,6 +271,7 @@ classdef CalciumGUI < handle
                 'Callback',@obj.importparam);
         end
         
+        % Callback function for import button
         function obj = importparam(obj,~,~)
             [pSet,path] = uigetfile;
             obj.Parameters = load([path pSet]);
@@ -264,6 +284,7 @@ classdef CalciumGUI < handle
             updateaxes(obj)
         end
         
+        % Button displays plot of all channel fluxes 
         function obj = addfluxbutton (obj)
             obj.hFluxButton  = ...
                 uicontrol('Style','pushbutton',...
@@ -274,6 +295,7 @@ classdef CalciumGUI < handle
                 'Callback',@obj.showflux);
         end
         
+        % Callback function for flux button
         function obj = showflux(obj,~,~)
             [~, ~, ~] = calcium_model(obj.Parameters,...
                 '-showchannelplot');
