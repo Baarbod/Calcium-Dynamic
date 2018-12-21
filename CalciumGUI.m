@@ -1,22 +1,20 @@
 classdef CalciumGUI < handle
     properties
-        Figure            % figure handle
-        nPlot             % Number plots
         Name              % name of gui figure
-        SliderPanel       % panel handle that contains ui elements
+        hFigure           % figure handle
+        nPlot             % Number plots
+        hSliderPanel      % panel handle that contains ui elements
         hResetButton      % reset button handle
         hExportButton     % parameter export button handle
         hFluxButton       % button that shows channel flux plots
-        hAxis             % Axis handles
-        nParam            % number of sliders
+        hAxis             % axis handles
         hSlider           % slider handles
-        
-        InitialParam
+        nParam            % number of sliders
+        InitialParam      % initial parameter set
         ParamNameList     % list of all parameter names
         ParamValueList    % list of all parameter values
-        ParamUnitList
+        ParamUnitList     % list of parameter units
         Parameters        % intial slider values
-        
         StateVar          % current state variables
         NonStateVar       % current non-state variables
         
@@ -28,13 +26,13 @@ classdef CalciumGUI < handle
         function obj = CalciumGUI(Name)
             obj.Name = Name;
             obj.nPlot = 4;
-            obj.Figure = figure('Visible','on','Name',obj.Name);
-            movegui(obj.Figure,'center');
+            obj.hFigure = figure('Visible','on','Name',obj.Name);
+            movegui(obj.hFigure,'center');
         end
         
         % Panel that will contain parameter sliders
         function obj = createpanel(obj)
-            obj.SliderPanel.Controls = uipanel('Title','Parameter Control',...
+            obj.hSliderPanel.Controls = uipanel('Title','Parameter Control',...
                 'FontSize',10,'FontWeight','bold','Position',[.80 0.1 0.20 0.9]);
         end
         
@@ -93,7 +91,7 @@ classdef CalciumGUI < handle
                 sMin = 0;
                 sMax = paramValue*2;
                 obj.hSlider.s(i,1) = ...
-                    uicontrol('Parent',obj.SliderPanel.Controls,...
+                    uicontrol('Parent',obj.hSliderPanel.Controls,...
                     'Style','slider',...
                     'String',paramName,...
                     'Min',sMin,'Max',sMax,'Value',paramValue,...
@@ -101,7 +99,7 @@ classdef CalciumGUI < handle
                     'Units','normalized',...
                     'Callback',@obj.updateaxes);
                 obj.hSlider.t(i,1) = ...
-                    uicontrol('Parent',obj.SliderPanel.Controls,...
+                    uicontrol('Parent',obj.hSliderPanel.Controls,...
                     'Style','text',...
                     'Units','normalized');
             end
@@ -232,13 +230,10 @@ classdef CalciumGUI < handle
         end
         
         % Callback function for reset button
-        function obj = resetgui(obj,~,~)
-            nVal = length(obj.hSlider.s);
-            obj.Parameters = zeros(nVal,1);
-            for i = 1:nVal
-                obj.hSlider.s(i).Value = obj.InitialParam(i);
-            end
-            updateaxes(obj);
+        function obj = resetgui(obj,~,~)         
+            clf
+            initparam(obj,obj.InitialParam);
+            initgui(obj);
         end
         
         % Button allows user to export current parameter set
