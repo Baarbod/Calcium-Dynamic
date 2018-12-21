@@ -1,10 +1,10 @@
 clear, clc, close all
 
-%% Instantiate from GUI Class
-
-gui = CalciumGUI('Calcium GUI');
-
+%% Initial Parameter Set
 P = initparamlist;
+
+%% Instantiate from GUI Class
+gui = CalciumGUI('Calcium GUI');
 
 initparam(gui,P);
 
