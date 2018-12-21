@@ -61,7 +61,7 @@ K_u = P.K_u.Value;        % buffer rate constant ratio (Qi 2015)
 
 %% Time
 tstart = 0; % [s]
-tend = 1500; % [s]
+tend = 2500; % [s]
 tstep = 0.1; % [s]
 
 %% Initial Conditions
