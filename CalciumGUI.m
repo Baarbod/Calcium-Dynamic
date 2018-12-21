@@ -294,7 +294,7 @@ classdef CalciumGUI < handle
         % Callback function for flux button
         function obj = showflux(obj,~,~)
             [~, ~, ~] = calcium_model(obj.Parameters,...
-                '-showchannelplot');
+                '-showfluxplot','-usesubplot');
         end
     end
 end
