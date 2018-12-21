@@ -270,11 +270,11 @@ classdef CalciumGUI < handle
         % Callback function for import button
         function obj = importparam(obj,~,~)
             [pSet,path] = uigetfile;
-            obj.Parameters = load([path pSet]);
-            
-            for i = 1:obj.SliderCount
+            pset = load([path pSet]);
+            obj.Parameters = pset.P;
+            for i = 1:obj.nParam
                 obj.hSlider.s(i,1).Value = ...
-                    obj.Parameters.ParamSet(i);
+                    obj.Parameters.(obj.ParamNameList{i}).Value;
             end
             
             updateaxes(obj)
