@@ -63,7 +63,7 @@ tic
 parfor i = 1:nParamSet
     try
         [oscFeature,freqFeature,maxFeature] = ...
-            SA_getfeatures_lean(paramSetArray(i,:));
+            SA_getfeatures(paramSetArray(i,:));
     catch
         fprintf("Problem in parameter set: %i\n",i)
         continue
@@ -84,6 +84,26 @@ save('SA_output','oscillatory','frequency','maximum',...
 %% Keep param sets that have oscillations in all four compartments
 Data = load('SA_output');
 paramSetArrayFiltered = SA_filterparamset(Data);
+
+%% Loop through parameter sets to visualize them
+
+[nParamSetFiltered,~] = size(paramSetArrayFiltered);
+for i = 1:nParamSetFiltered
+    clf
+    P = SA_formatparamset(paramSetArrayFiltered(i,:));
+    [~,~,~] = calcium_model(P,'-showplot','-usesubplot');
+    figName = ['Parameter Set: ' num2str(i)];
+    fig = gcf; fig.Name = figName;
+    pause
+end
+
+
+
+
+
+
+
+
 
 
 
