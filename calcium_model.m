@@ -61,7 +61,7 @@ K_u = P.K_u.Value;        % buffer rate constant ratio (Qi 2015)
 
 %% Time
 tstart = 0; % [s]
-tend = 2500; % [s]
+tend = 1000; % [s]
 tstep = 0.1; % [s]
 
 %% Initial Conditions
@@ -74,7 +74,7 @@ tstep = 0.1; % [s]
 % X0 = [cInit;eInit;mInit;uInit;hInit;h_uInit];
 % X0 = fsolve(@(X) equations(0,X), X0);
 
-initStateVar = [0.3;180;0.07;180;0.7;0.7];
+initStateVar = [0.3;180;0.07;40;0.7;0.7];
 initNonStatVar = zeros(14,1);
 X0 = [initStateVar;initNonStatVar];
 
@@ -141,6 +141,9 @@ NonStateVar.Jpmca = Jpmca;
 %% Plot Cytosol
 
 if ismember('showplot',modelOptions)
+    if ismember('usesubplot',modelOptions)
+        figure
+    end
     fields = fieldnames(StateVar);
     for i = 1:numel(fields)
         VarXaxis = t;
@@ -171,6 +174,9 @@ if ismember('showplot',modelOptions)
 end
 
 if ismember('showfluxplot',modelOptions)
+    if ismember('usesubplot',modelOptions)
+        figure
+    end
     fields = fieldnames(NonStateVar);
     for i = 1:numel(fields)
         VarXaxis = t;
