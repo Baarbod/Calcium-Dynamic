@@ -1,6 +1,6 @@
 function [t, StateVar, NonStateVar] = calcium_model(varargin)
 % Input Options:
-%   -showcompartmentplot
+%   -showplot
 %   -showchannelplot 
 
 nOpt = 0;
@@ -137,7 +137,7 @@ NonStateVar.Jpmca = Jpmca;
 
 
 %% Plot Cytosol
-if ismember('showcompartmentplot',modelOptions)
+if ismember('showplot',modelOptions)
     fields = fieldnames(StateVar);
     for i = 1:numel(fields)
         figure
