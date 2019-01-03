@@ -7,8 +7,8 @@
 clear, clc, close all
 
 %% Choose number of parameter sets to generate
-nParamSet = 1000;    
-paramSpan = 0.2;
+nParamSet = 500000;    
+paramSpan = 0.20;
 
 %% Set parameter lower/upper bounds
 P = initparamlist;
@@ -29,7 +29,7 @@ lb.cM = 0;
 ub.cM = 1;
 lb.cN = 0;
 ub.cN = 1;
-lb.volMd = 0.03*0.9;
+lb.volMd = 0.004;
 ub.volMd = 0.03*1.1;
 
 %% Create vectors of lower/upper bounds
@@ -88,13 +88,29 @@ paramSetArrayFiltered = SA_filterparamset(Data);
 %% Loop through parameter sets to visualize them
 
 [nParamSetFiltered,~] = size(paramSetArrayFiltered);
+figure
+hold all
 for i = 1:nParamSetFiltered
-    clf
+    %     clf
     P = SA_formatparamset(paramSetArrayFiltered(i,:));
-    [~,~,~] = calcium_model(P,'-showplot','-usesubplot');
+%     [~,~,~] = calcium_model(P,'-showplot','-usesubplot');
+    [t,StateVar,~] = calcium_model(P);
+    subplot(2,2,1)
+    plot(t,StateVar.c)
+    title('Cyt')
+    subplot(2,2,2)
+    plot(t,StateVar.m)
+    title('Mt')
+    subplot(2,2,3)
+    plot(t,StateVar.e)
+    title('ER')
+    subplot(2,2,4)
+    plot(t,StateVar.u)
+    title('mD')
     figName = ['Parameter Set: ' num2str(i)];
     fig = gcf; fig.Name = figName;
     pause
+    %     close(fig)
 end
 
 
