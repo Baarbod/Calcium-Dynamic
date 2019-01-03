@@ -3,8 +3,8 @@ function [oscFeature,freqFeature,maxFeature] = SA_getfeatures(param)
 dbstop if error
 
 %% Solve model given a parameter set
-P = SA_formatparam(param);
-[t, StateVar, ~] = calcium_model(P,'-showplot');
+P = SA_formatparamset(param);
+[t, StateVar, ~] = calcium_model(P);
 c = StateVar.c;
 e = StateVar.e;
 m = StateVar.m;
@@ -35,7 +35,6 @@ for i = 1:numel(compartmentList)
     %% check if the parameter set is oscillatory
     if numel(pks)>=2
         osc = 1;
-        disp('OSCILLATION FOUND')
 %         figure
 %         plot(t,u)
     else
@@ -54,4 +53,8 @@ for i = 1:numel(compartmentList)
     freqFeature(i) = freq;
     maxFeature(i) = max(Varplot);
         
+end
+
+if sum(oscFeature) > 1
+    fprintf("%i Oscillations Found\n",sum(oscFeature))
 end
