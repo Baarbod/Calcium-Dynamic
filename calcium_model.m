@@ -65,14 +65,14 @@ K_u = P.K_u.Value;        % buffer rate constant ratio (Qi 2015)
 global tend
 
 tstart = 0; % [s]
-tend = 1500; % [s]
+tend = 1000; % [s]
 tstep = 0.1; % [s]
 
 %% Initial Conditions
-cInit = 0.1; % [uM]
-eInit = 250; % [uM]
-mInit = 0.08; % [uM]
-uInit = 0.1; % [uM]
+cInit = 0.5213; % [uM]
+eInit = 277; % [uM]
+mInit = 0.1618; % [uM]
+uInit = 5.6463; % [uM]
 hInit = 0.7;
 h_uInit = 0.7;
 initNonStatVar = zeros(14,1);
