@@ -1,8 +1,7 @@
 clear, clc, close all
 
 %% Initial Parameter Set
-% P = initparamlist;
-load([pwd '\parameter_sets\pset__1'])
+P = initparamlist;
 
 %% Instantiate from GUI Class
 gui = CalciumGUI('Calcium GUI');
