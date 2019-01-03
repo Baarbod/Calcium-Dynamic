@@ -4,11 +4,9 @@ classdef CalciumGUI < handle
         hFigure           % figure handle
         nPlot             % Number plots
         hSliderPanel      % panel handle that contains ui elements
-        
         hButtonPanel      % panel handle that contains buttons
         hButton           % vector of all button handles
-        nButton           % number of buttons currently active
-        
+        nButton           % number of buttons currently active  
         hAxis             % axis handles
         hSlider           % slider handles
         nParam            % number of sliders
@@ -19,7 +17,6 @@ classdef CalciumGUI < handle
         Parameters        % intial slider values
         StateVar          % current state variables
         NonStateVar       % current non-state variables
-        
     end
     
     methods
@@ -28,26 +25,25 @@ classdef CalciumGUI < handle
         function obj = CalciumGUI(Name)
             obj.Name = Name;
             obj.nPlot = 4;
-            obj.nButton = 0;
             obj.hFigure = figure('Visible','on','Name',obj.Name);
             movegui(obj.hFigure,'center');
         end
         
         % Panel that will contain parameter sliders
-        function obj = createpanel(obj)
+        function createpanel(obj)
             obj.hSliderPanel.Controls = uipanel('Title','Parameter Control',...
                 'FontSize',10,'FontWeight','bold','Position',[.80 0 0.20 1]);
         end
         
         % Panel that will contain buttons
-        function obj = createbuttonpanel(obj)
+        function createbuttonpanel(obj)
             obj.hButtonPanel.Controls = uipanel('Title','Buttons',...
                 'FontSize',10,'FontWeight','bold',...
                 'Position',[.42 0.02 0.35 0.3]);
         end
         
         % Initialize all parameter properties
-        function obj = initparam(obj,P)
+        function initparam(obj,P)
             obj.InitialParam = P;
             obj.Parameters = P;
             obj.ParamNameList = fieldnames(obj.Parameters);
@@ -63,21 +59,24 @@ classdef CalciumGUI < handle
         end
         
         % Setup all GUI components and solve initial system
-        function obj = initgui(obj)
+        function initgui(obj)
             createpanel(obj);
             createbuttonpanel(obj);
             setsliders(obj);
-            setsliderposition(obj);           
+            setsliderposition(obj); 
+            obj.nButton = 0;
             addresetbutton(obj);            
             addexportparambutton(obj);            
-            addimportparambutton(obj);            
-            addfluxbutton(obj);            
+            addimportparambutton(obj);
+            addfluxbutton(obj);
+            addbifdiagrambutton(obj);
+            setbuttonposition(obj)
             createplot(obj); 
             updateaxes(obj);
         end
 
         % Create the axes; Position = [left bottom width height]
-        function obj = createplot(obj)
+        function createplot(obj)
             nRow = 3;
             nCol = 2;
             height = 1/nRow-0.04;
@@ -98,12 +97,18 @@ classdef CalciumGUI < handle
         end
         
         % Set all the information for all sliders
-        function obj = setsliders(obj)
+        function setsliders(obj)
             for i = 1:obj.nParam
+                exceptParamList = {'cI','cS','cM','cN'};
                 paramName = obj.ParamNameList{i};
                 paramValue = obj.ParamValueList(i);
-                sMin = 0;
-                sMax = paramValue*2;
+                if ismember(paramName,exceptParamList)
+                    sMin = 0;
+                    sMax = 1;
+                else
+                    sMin = 0;
+                    sMax = paramValue*2;
+                end
                 obj.hSlider.s(i,1) = ...
                     uicontrol('Parent',obj.hSliderPanel.Controls,...
                     'Style','slider',...
@@ -120,7 +125,7 @@ classdef CalciumGUI < handle
         end
         
         % Set all slider positions
-        function obj = setsliderposition(obj)
+        function setsliderposition(obj)
             width = 0.6;
             height = 1/obj.nParam;
             for i = 1:obj.nParam
@@ -132,7 +137,7 @@ classdef CalciumGUI < handle
         end
         
         % Update the text showing current slider values
-        function obj = updatetext(obj)
+        function updatetext(obj)
             for i = 1:obj.nParam
                 name = obj.ParamNameList{i};
                 val = obj.hSlider.s(i).Value;
@@ -148,7 +153,7 @@ classdef CalciumGUI < handle
         end
         
         % Update parameters to be used as model input
-        function obj = updateparameters(obj)
+        function updateparameters(obj)
             obj.ParamValueList = zeros(obj.nParam,1);
             for i = 1:obj.nParam
                 obj.ParamValueList(i,1) = obj.hSlider.s(i).Value;
@@ -159,7 +164,7 @@ classdef CalciumGUI < handle
         end
         
         % Run model with current parameters
-        function obj = solvemodel(obj)
+        function solvemodel(obj)
             [t, state, ~] = calcium_model(obj.Parameters);
             
             obj.StateVar(:,1) = t;
@@ -171,7 +176,7 @@ classdef CalciumGUI < handle
         end
         
         % Update the plots based on current model state
-        function obj = updateaxes(obj,~,~)
+        function updateaxes(obj,~,~)
             
             updatetext(obj);
             updateparameters(obj);
@@ -234,7 +239,7 @@ classdef CalciumGUI < handle
         end        
                     
         % Button returns the system to it's initial state
-        function obj = addresetbutton(obj)
+        function addresetbutton(obj)
             obj.nButton = obj.nButton + 1;
             obj.hButton.b(obj.nButton) = ...
                 uicontrol('Parent',obj.hButtonPanel.Controls,...
@@ -242,19 +247,18 @@ classdef CalciumGUI < handle
                 'String','RESET',...
                 'FontSize',10,...
                 'Units','normalized',...
-                'Position',[0 0.75 0.25 0.25],...
                 'Callback',@obj.resetgui);
         end
         
         % Callback function for reset button
-        function obj = resetgui(obj,~,~)         
+        function resetgui(obj,~,~)         
             clf
             initparam(obj,obj.InitialParam);
             initgui(obj);
         end
         
         % Button allows user to export current parameter set
-        function obj = addexportparambutton(obj)
+        function addexportparambutton(obj)
             obj.nButton = obj.nButton + 1;
             obj.hButton.b(obj.nButton)  = ...
                 uicontrol('Parent',obj.hButtonPanel.Controls,...
@@ -262,12 +266,11 @@ classdef CalciumGUI < handle
                 'String','EXPORT',...
                 'FontSize',10,...
                 'Units','normalized',...
-                'Position',[0.25 0.75 0.25 0.25],...
                 'Callback',@obj.exportparam);
         end
         
         % Callback function for export button
-        function obj = exportparam(obj,~,~)
+        function exportparam(obj,~,~)
             ParamSet = obj.Parameters;
             path = uigetdir(pwd,'Select path for output');
             name = char(inputdlg("Enter parameter set name"));
@@ -275,7 +278,7 @@ classdef CalciumGUI < handle
         end
         
         % Button allows user to import a parameter set
-        function obj = addimportparambutton(obj)
+        function addimportparambutton(obj)
             obj.nButton = obj.nButton + 1;
             obj.hButton.b(obj.nButton)  = ...
                 uicontrol('Parent',obj.hButtonPanel.Controls,...
@@ -283,15 +286,15 @@ classdef CalciumGUI < handle
                 'String','IMPORT',...
                 'FontSize',10,...
                 'Units','normalized',...
-                'Position',[0.5 0.75 0.25 0.25],...
                 'Callback',@obj.importparam);
         end
         
         % Callback function for import button
-        function obj = importparam(obj,~,~)
+        function importparam(obj,~,~)
             [pSet,path] = uigetfile;
             pset = load([path pSet]);
-            obj.Parameters = pset.P;
+            fname = char(fieldnames(pset));
+            obj.Parameters = pset.(fname);
             for i = 1:obj.nParam
                 obj.hSlider.s(i,1).Value = ...
                     obj.Parameters.(obj.ParamNameList{i}).Value;
@@ -301,7 +304,7 @@ classdef CalciumGUI < handle
         end
         
         % Button displays plot of all channel fluxes 
-        function obj = addfluxbutton(obj)
+        function addfluxbutton(obj)
             obj.nButton = obj.nButton + 1;
             obj.hButton.b(obj.nButton)  = ...
                 uicontrol('Parent',obj.hButtonPanel.Controls,...
@@ -309,18 +312,51 @@ classdef CalciumGUI < handle
                 'String','FLUX',...
                 'FontSize',10,...
                 'Units','normalized',...
-                'Position',[0.75 0.75 0.25 0.25],...
                 'Callback',@obj.showflux);
         end
         
         % Callback function for flux button
-        function obj = showflux(obj,~,~)
+        function showflux(obj,~,~)
             [~, ~, ~] = calcium_model(obj.Parameters,...
                 '-showfluxplot','-usesubplot');
         end
         
+        % Button displays plot of all channel fluxes 
+        function addbifdiagrambutton(obj)
+            obj.nButton = obj.nButton + 1;
+            obj.hButton.b(obj.nButton)  = ...
+                uicontrol('Parent',obj.hButtonPanel.Controls,...
+                'Style','pushbutton',...
+                'String','IP3_BIF_DIAG',...
+                'FontSize',10,...
+                'Units','normalized',...
+                'Callback',@obj.showip3bifdiag);
+        end
+        
+        % Callback function for flux button
+        function showip3bifdiag(obj,~,~)
+            calcium_model(obj.Parameters,'-showbifdiag');
+        end
+        
         % Sets position of all buttons
-%         function obj = setbuttonposition(obj)
+        function setbuttonposition(obj)
+            nRow = 3;
+            nCol = 4;
+            width = 1/nCol;
+            height = 1/nRow;
+            ibutton = 0;
+            for irow = 1:nRow
+                for icol = 1:nCol
+                    ibutton = ibutton + 1;
+                    if ibutton > obj.nButton
+                        break
+                    end
+                    obj.hButton.b(ibutton).Position = ...
+                        [(icol-1)*width (nRow-irow)*height... 
+                        width height];
+                end
+            end
             
+        end
     end
 end
