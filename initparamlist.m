@@ -8,8 +8,6 @@ P = Data.(fname);
 
 return
 
-
-
 P.volCt.Value = 0.75;       P.volCt.Unit = 'pL';
 P.volMd.Value = 0.3;        P.volMd.Unit = 'pL';   
 P.volER.Value = 0.1;        P.volER.Unit = 'pL';
