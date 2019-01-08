@@ -214,13 +214,16 @@ classdef CalciumGUI < handle
             
             % NORMALIZED PLOT HARD CODED
             ax = obj.hAxis.h(1,5);
+%             figure
+%             ax = gca;
             time_window = 0.1*t(end);
             tplot = t(t>(t(end) - time_window));
             cplot = c(t>(t(end) - time_window));cplotNORM = cplot/max(cplot);
             eplot = e(t>(t(end) - time_window));eplotNORM = eplot/max(eplot);
             mplot = m(t>(t(end) - time_window));mplotNORM = mplot/max(mplot);
             uplot = u(t>(t(end) - time_window)); uplotNORM = uplot/max(uplot);
-            h = plot(tplot,[cplotNORM, eplotNORM, mplotNORM, uplotNORM],'Parent',ax); 
+            h = plot(tplot,[cplotNORM, eplotNORM, mplotNORM, uplotNORM],'Parent',ax);
+%             h = plot(tplot,[cplot*200, eplot, mplot*1000, uplot*10],'Parent',ax); 
             legend(ax,{'c','e','m','u'})
             h(1).LineWidth = 1.2; 
             h(2).LineWidth = 1.2;
@@ -335,7 +338,54 @@ classdef CalciumGUI < handle
         
         % Callback function for flux button
         function showip3bifdiag(obj,~,~)
-            calcium_model(obj.Parameters,'-showbifdiag');
+            nstim = 100;
+            Minpkprom = 0.1;
+            
+            ip3 = linspace(0,1,nstim)';
+            a = floor(0.1*nstim);
+            window = (nstim-a):nstim;
+            cmin = zeros(nstim,1); cmax = zeros(nstim,1);
+%             emin = zeros(nstim,1); emax = zeros(nstim,1);
+%             mmin = zeros(nstim,1); mmax = zeros(nstim,1);
+%             umin = zeros(nstim,1); umax = zeros(nstim,1);
+            f = waitbar(0,'Creating bifurcation diagram...');
+            for i = 1:nstim
+                [t, sv, ~] = calcium_model(obj.Parameters,...
+                    ip3(i),'-plugparameter');
+                c = sv.c;% e = sv.e; m = sv.m; u = sv.u;
+                
+                [~, clocs] = findpeaks(c,'MinPeakProminence',Minpkprom);
+                if numel(clocs) < 2
+                    cmax(i) = max(c(window));
+                    cmin(i) = cmax(i);
+                    continue
+                end
+                cwindow = c(clocs(end-1):clocs(end));
+                cmin(i) = min(cwindow); cmax(i) = max(cwindow);
+                
+%                 [~, elocs] = findpeaks(e,'MinPeakProminence',Minpkprom);
+%                 ewindow = e(e(elocs(end-1)):e(elocs(end)));
+%                 emin(i) = min(ewindow); emax = max(ewindow);
+%                 
+%                 [~, mlocs] = findpeaks(m,'MinPeakProminence',Minpkprom);
+%                 mwindow = m(m(mlocs(end-1)):m(mlocs(end)));
+%                 mmin(i) = min(mwindow); mmax = max(mwindow);
+%                 
+%                 [~, ulocs] = findpeaks(u,'MinPeakProminence',Minpkprom);
+%                 uwindow = u(u(ulocs(end-1)):u(ulocs(end)));
+%                 umin(i) = min(uwindow); umax = max(uwindow);
+                
+                
+%                 cmin(i) = min(c(window)); cmax(i) = max(c(window));
+%                 emin(i) = min(e(window)); emax(i) = max(e(window));
+%                 mmin(i) = min(m(window)); mmax(i) = max(m(window));
+%                 umin(i) = min(u(window)); umax(i) = max(u(window));
+                waitbar(i/nstim,f)
+            end
+            close(f)
+            figure
+            hold on
+            plot(ip3,cmin,ip3,cmax)
         end
         
         % Sets position of all buttons
