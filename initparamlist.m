@@ -1,10 +1,10 @@
 function P = initparamlist(varargin)
 
 Data = load(['C:\Users\Baarbod\Desktop\local_repos\calcium_sandbox\'...
-    'parameter_sets\run3\'...
-    'pset__Ct_1.1117_Er_324.0304_Mt_0.38663_Md_17.8676.mat']);
+    'parameter_sets\Typical_Case.mat']);
 
-P = Data.P;
+fname = char(fieldnames(Data));
+P = Data.(fname);
 
 return
 
