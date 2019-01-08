@@ -3,7 +3,8 @@ function [t, StateVar, NonStateVar] = calcium_model(varargin)
 %   -showplot
 %   -showfluxplot
 %   -usesubplot
-%   -showbifdiag
+%   -plugparameter
+%   -runwithstim
 
 nOpt = 0;
 modelOptions = cell(1,3);
@@ -30,7 +31,15 @@ kpmca = P.kpmca.Value;      % [uM] efflux half max constant for PMCA
 Vip3r = P.Vip3r.Value;      % [1/s] max flux of IP3R
 Vserca = P.Vserca.Value;    % [uM/s] max flux of SERCA pump
 kserca = P.kserca.Value;    % [uM] activation constant for SERCA pump
-ip3 = P.ip3.Value;          % [uM] IP3 in the cytosol
+
+if ismember('plugparameter',modelOptions)
+    ip3 = varargin{2};
+else
+    ip3 = P.ip3.Value;          % [uM] IP3 in the cytosol
+end
+
+ip3 = 0.1;
+
 a2 = P.a2.Value;            % [uM^-1*s^-1] IP3R binding rate ca inhibition sites
 d1 = P.d1.Value;            % [uM] IP3R dissociation constant for IP3 sites
 d2 = P.d2.Value;            % [uM] IP3R dissociation constant for ca inhibition sites
@@ -65,14 +74,19 @@ K_u = P.K_u.Value;        % buffer rate constant ratio (Qi 2015)
 global tend
 
 tstart = 0; % [s]
-tend = 1000; % [s]
+tend = 10000; % [s]
 tstep = 0.1; % [s]
 
 %% Initial Conditions
-cInit = 0.5213; % [uM]
-eInit = 277; % [uM]
-mInit = 0.1618; % [uM]
-uInit = 5.6463; % [uM]
+% cInit = 0.71; % [uM]
+% eInit = 297; % [uM]
+% mInit = 0.09; % [uM]
+% uInit = 16.73; % [uM]
+cInit = 0.1; % [uM]
+eInit = 250; % [uM]
+mInit = 0.08; % [uM]
+uInit = 0.1; % [uM]
+
 hInit = 0.7;
 h_uInit = 0.7;
 initNonStatVar = zeros(14,1);
@@ -88,42 +102,9 @@ X0 = [initStateVar;initNonStatVar];
 %
 % initStateVar = [0.1;250;0.08;0.1;0.7;0.7];
 % initStateVar = fsolve(@(X) equations(0,X), X0,options_fsolve);
+% initStateVar = fsolve(@(X) equations(0,X), X0);
+
 % X0 = [initStateVar;initNonStatVar];
-
-
-if ismember('showbifdiag',modelOptions)
-    X0 = initStateVar;
-    ip3_vals = linspace(0,1,200);
-    real_eigs = zeros(numel(X0), length(ip3_vals));
-    img_eigs = zeros(numel(X0), length(ip3_vals));
-    
-    for ii = 1:numel(ip3_vals)
-        ip3 = ip3_vals(ii);
-        
-        % find equilibrium
-        %         X0 = fsolve(@(X) equations(0,X), X0);
-        
-        % find jacobian matrix at steady state
-        J = NumJacob(@(X) equations_BifD(0,X), X0);
-        
-        % find eigenvals
-        lambdas = eig(J);
-        
-        real_eigs(:,ii) = real(lambdas);
-        img_eigs(:,ii) = imag(lambdas);
-        
-    end
-    
-    figure, plot(ip3_vals, real_eigs(1:4,:),'b-','linewidth',1), grid on, hold on
-    plot(ip3_vals, img_eigs(1:4,:), 'r-','linewidth',1)
-    legend('real','imaginary')
-    
-    [~,col] = find(real_eigs(1:4,:)>0);
-    mu_osc = ip3_vals(col);
-    
-    return
-    
-end
 
 %% Solve
 M = zeros(length(initStateVar),length(initStateVar));
@@ -185,7 +166,7 @@ NonStateVar.Jin = Jin;
 NonStateVar.Jpmca = Jpmca;
 
 
-%% Plot Cytosol
+%% Plots
 
 if ismember('showplot',modelOptions)
     if ismember('usesubplot',modelOptions)
@@ -257,13 +238,13 @@ end
 
     function dXdt = equations(t,X)
         
-        %         fprintf('%f\n',ip3)
-        %         if t > 200 && t < 400
-        % %             fprintf('%f\n',floor(t))
-        %             ip3 = 0.52;
-        %         else
-        %             ip3 = 0;
-        %         end
+        if ismember('runwithstim',modelOptions)
+            if t > 5000 && t < 10000
+                ip3 = 0.4;
+            else
+                ip3 = 0;
+            end
+        end
         
         % State Variables
         k = 1;
@@ -388,104 +369,6 @@ end
         dXdt(k) = Jleak_e_c - nsJleak_e_c;  k = k + 1;
         dXdt(k) = Jin - nsJin;              k = k + 1;
         dXdt(k) = Jpmca - nsJpmca;
-        
-    end
-
-%% Setup differential equations to be solved using ODE solver
-
-    function dXdt = equations_BifD(t,X)
-        
-        % State Variables
-        k = 1;
-        c = X(k);     k = k + 1;
-        e = X(k);     k = k + 1;
-        m = X(k);     k = k + 1;
-        u = X(k);     k = k + 1;
-        h = X(k);     k = k + 1;
-        h_u = X(k);
-        
-        %% Compute Non-State Variables
-        % IP3R
-        sact = h*((ip3/(ip3 + d1)) * c/(c + d5));
-        Poip3r = sact^4 + 4*sact^3*(1 - sact);
-        Jip3r = (1 - cI)*(Vip3r*Poip3r)*(e - c);
-        
-        % IP3R_u
-        sact_u = h*((ip3/(ip3 + d1)) * u/(u + d5));
-        Poip3r_u = sact_u^4 + 4*sact_u^3*(1 - sact_u);
-        Jip3r_u = cI*(Vip3r*Poip3r_u)*(e - u);
-        
-        % SERCA
-        Jserca = (1 - cS)*Vserca*c^2/(kserca^2 + c^2);
-        
-        % SERCA_u
-        Jserca_u = cS*Vserca*u^2/(kserca^2 + u^2);
-        
-        % mNCX
-        Jncx = (1 - cN)*Vncx*(N^3/(kna^3 + N^3))*(m/(kncx + m));
-        
-        % mNCX_u
-        Jncx_u = cN*Vncx*(N_u^3/(kna^3 + N_u^3))*(m/(kncx + m));
-        
-        % MCU
-        Jmcu = (1 - cM)*Vmcu*(c^2/(kmcu^2 + c^2));
-        
-        % MCU_u
-        Jmcu_u = cM*Vmcu*(u^2/(kmcu^2 + u^2));
-        
-        % leaks
-        Jleak_u_c = leak_u_c*(u - c);
-        Jleak_u_m = leak_u_m*(u - m);
-        Jleak_e_u = leak_e_u*(e - u);
-        Jleak_e_c = leak_e_c*(e - c);
-        
-        % Influx
-        Jin = Jin;
-        
-        % PMCA
-        Jpmca = Vpmca*c/(kpmca + c);
-        
-        % h
-        ah = a2*d2*(ip3 + d1)/(ip3 + d3);
-        bh = a2*c;
-        
-        % h_u
-        bh_u = a2*u;
-        
-        % buffering
-        theta_c = bt_c*K_c/((K_c + c)^2); % buffer factor
-        theta_e = bt_e*K_e/((K_e + e)^2); % buffer factor
-        theta_m = bt_m*K_m/((K_m + m)^2); % buffer factor
-        theta_u = bt_u*K_u/((K_u + u)^2); % buffer factor
-        
-        %% Compute State Variables
-        dcdt = (Jin + Jip3r + Jleak_u_c + Jleak_e_c + Jncx ...
-            - Jpmca - Jserca - Jmcu)/(1 + theta_c);
-        
-        dedt = (volCt/volER*(Jserca + Jserca_u ...
-            - Jip3r - Jip3r_u - Jleak_e_u - Jleak_e_c))/(1 + theta_e);
-        
-        dmdt = (volCt/volMt*(Jmcu + Jmcu_u + Jleak_u_m ...
-            - Jncx - Jncx_u))/(1 + theta_m);
-        
-        dudt = (volCt/volMd*(Jip3r_u + Jncx_u + Jleak_e_u ...
-            - Jserca_u - Jmcu_u - Jleak_u_m - Jleak_u_c))/(1 + theta_u);
-        
-        dhdt = ah*(1 - h) - bh*h;
-        
-        dh_udt = ah*(1 - h_u) - bh_u*h_u;
-        
-        %% Assign equations to function output
-        dXdt = zeros(numel(X),1);
-        
-        % State Variables
-        k = 1;
-        dXdt(k) = dcdt;     k = k + 1;
-        dXdt(k) = dedt;     k = k + 1;
-        dXdt(k) = dmdt;     k = k + 1;
-        dXdt(k) = dudt;     k = k + 1;
-        dXdt(k) = dhdt;     k = k + 1;
-        dXdt(k) = dh_udt;   k = k + 1;
         
     end
 
